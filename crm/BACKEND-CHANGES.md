@@ -14,7 +14,7 @@ Conventions: errors are `{ "error": "message" }` with the status code
 
 ## 1. New models (Mongo collections)
 
-### `organisationStatus` (lifecycle state)
+### `organizationStatus` (lifecycle state)
 Stored on the `Organization` document:
 ```json
 {
@@ -106,7 +106,7 @@ A **frame is the canvas a print is made on**: the background design carries the 
 photo slots, and the complete output print (photos + the 15% branding footer) is printed
 on the frame. The catalogue is platform data — **only `OWNER` may add or remove frames**
 (`PLATFORM_ADMIN` reads it for the same *Templates & Frames* screen). **A frame cannot be
-removed while it is enabled (`allowed: true`) in any organisation's defaults → 409.**
+removed while it is enabled (`allowed: true`) in any organization's defaults → 409.**
 Orgs price each frame and switch booth availability in `OrganizationDefaults`.
 
 ### `OrganizationDefaults` (new collection — the single org config doc)
@@ -200,7 +200,7 @@ discount** (P0 SEC-07) — the server computes price from `OrganizationDefaults`
   "actorId": "userId | null",     // null = system
   "organizationId": "ObjectId | null",  // null = platform-level
   "action": "platform.org.suspended",   // dotted, typed
-  "entity": "organisation",
+  "entity": "organization",
   "summary": "Suspended vishal — reason: billing dispute",
   "severity": "info | warn | danger",
   "ip": "string | null",
@@ -243,17 +243,17 @@ Auth — profile
        orgs: [{ id, name, email, plan, planName, planStatus, expiry, daysLeft,
                 revenue, revenueThisMonth, revenueFY }] }`
 
-- `GET /api/platform/organisations?search=&status=&plan=&page=&limit=`
+- `GET /api/platform/organizations?search=&status=&plan=&page=&limit=`
   → `{ items: [{ id, name, email, ownerName, ownerEmail, plan, planName, status,
                  planStatus, planExpiry, planDaysLeft, devices, onlineDevices, activeEvents,
                  createdAt, lastActiveAt }], page, pages, total }`
-- `GET /api/platform/organisations/:id`
-  → full detail: `organisation, plan { planName, status, startDate, endDate, daysLeft,
+- `GET /api/platform/organizations/:id`
+  → full detail: `organization, plan { planName, status, startDate, endDate, daysLeft,
      deviceLimit, eventLimit, amountPaid, invoiceNo }, subscription, devices[], events[],
      revenue { total }, suspendReason`
-- `POST /api/platform/organisations/:id/suspend` body `{ reason }` (reason required) → 200
-- `POST /api/platform/organisations/:id/ban` body `{ reason }` (reason required) → 200
-- `POST /api/platform/organisations/:id/restore` → 200
+- `POST /api/platform/organizations/:id/suspend` body `{ reason }` (reason required) → 200
+- `POST /api/platform/organizations/:id/ban` body `{ reason }` (reason required) → 200
+- `POST /api/platform/organizations/:id/restore` → 200
   *(all three: OWNER only; audit-logged; blocks apply immediately to events/devices/booths)*
 
 - `GET /api/platform/audit?search=&actor=&action=&page=&limit=`
@@ -289,12 +289,12 @@ Auth — profile
   `{ name, description?, background: { type, colors[], pattern }, text?, defaultPrice? }`
   → 201 `{ frame }` (409 on duplicate name)
 - `DELETE /api/platform/frames/:id` (**OWNER only**) → 200
-  (409 while `enabledOrgs > 0` — disable it in those organisations' defaults first)
+  (409 while `enabledOrgs > 0` — disable it in those organizations' defaults first)
 
-### Organisation (scope = org role, tenant-scoped by org filter)
+### Organization (scope = org role, tenant-scoped by org filter)
 
 - `GET /api/org/dashboard`
-  → `{ organisation { name, contact, status },
+  → `{ organization { name, contact, status },
        plan { plan, planName, status, startDate, endDate, daysLeft, deviceLimit, eventLimit },
        usage { deviceLimit, eventLimit, devicesUsed, eventsUsed },
        revenue { total, thisMonth, fy, byStatus: { paid, pending, failed },
@@ -412,7 +412,7 @@ POST /api/auth/reset-password    { email, code, newPassword }
 ```
 PUT /api/org/devices/:id   { deviceName?, operatorName?, operatorPhone? }
 ```
-- Perm: `organisation.events.devices.manage` → **both ORG_ADMIN and ORG_MANAGER**.
+- Perm: `organization.events.devices.manage` → **both ORG_ADMIN and ORG_MANAGER**.
 - `deviceName` required non-empty; `operatorName`/`operatorPhone` nullable strings
   (phone ≤ 20 chars). The operator is the **on-ground booth worker, not a CRM user** —
   whoever assigns them records name + number so the whole team can reach them.
@@ -528,7 +528,7 @@ updated / deleted`.
   template; designer templates can only be published/unpublished, never
   edited or deleted.
 
-### 5.5 Organisation Defaults — layout pricing (replaces frame pricing)
+### 5.5 Organization Defaults — layout pricing (replaces frame pricing)
 
 `GET/PUT /api/org/defaults` now carry **`layoutPrices`** instead of `frames`:
 
@@ -550,7 +550,7 @@ layoutPrices: { "46:1": 30, "46:4": 40, "57:1": 70, "57:3": 90, ... }
 ### 5.6 Event branding — sponsor/host/venue logos (0–15, optional)
 
 Event create/update accept `branding.logos: string[]` (data-URIs / URLs) —
-**not** the organisation logo. They are the extra personalisation layer
+**not** the organization logo. They are the extra personalisation layer
 (sponsors, host, venue, player teams — the "BMW/Audi/Ferrari at a race"
 case) that each template places at its reserved footer positions.
 
@@ -592,14 +592,14 @@ Full rationale in `SECURITY.md`. Contract deltas:
 * `POST /org/team { name, email, password, role }` — `role ∈ ORG_ADMIN|ORG_MANAGER` (400 otherwise). ORG_ADMIN only.
 * `PUT /org/team/:id { name?, email?, role?, status? }` — role changes allowed; **409** when it would leave zero active admins; 400 on self-deactivate.
 * `POST /org/team/:id/deactivate|activate` — same guards.
-* New perm `organisation.team.view` (ADMIN + MANAGER) alongside `organisation.team.manage` (ADMIN).
+* New perm `organization.team.view` (ADMIN + MANAGER) alongside `organization.team.manage` (ADMIN).
 
 ### 6.6 Input guards
 * Media fields (`photoUrl`, defaults `logoUrl`, `branding.logos[]`, template `design.bg.url`) accept only `https://`, `http://` or `data:image/*` → else 400.
 * Free text sanitised (control chars stripped, length capped): names ≤ 80, emails ≤ 120, taglines ≤ 120.
 
 ### 6.7 Fixed
-* `GET /platform/organisations/:id` previously fell through to the list handler and returned a paginated list; now returns the org detail object `{ ...org, plan, subscription, devices[], events[], revenue }`.
+* `GET /platform/organizations/:id` previously fell through to the list handler and returned a paginated list; now returns the org detail object `{ ...org, plan, subscription, devices[], events[], revenue }`.
 
 ### 6.8 Environment
 See `.env.example`. `VITE_MOCK=false` builds contain no mock code; `VITE_API_URL` base (empty = same origin).
@@ -608,7 +608,7 @@ See `.env.example`. `VITE_MOCK=false` builds contain no mock code; `VITE_API_URL
 
 **Org defaults** (`GET/PUT /org/defaults`) gain:
 - `upiId: string|null` — validated `^[a-zA-Z0-9.\-_]{2,256}@[a-zA-Z]{2,64}$`. Guests are shown a `upi://pay?pa=<upiId>&pn=<orgName>&cu=INR` QR at the booth when direct mode is on. Wallet withdrawals are paid to this ID.
-- `payoutMode: 'upi' | 'wallet'` — `upi` = guests pay the org UPI directly; `wallet` (default / "paused") = HappyPix collects and credits the org wallet. Turning `upi` on without a `upiId` → 400. Mode changes are audited (`organisation.payout.mode_changed`).
+- `payoutMode: 'upi' | 'wallet'` — `upi` = guests pay the org UPI directly; `wallet` (default / "paused") = HappyPix collects and credits the org wallet. Turning `upi` on without a `upiId` → 400. Mode changes are audited (`organization.payout.mode_changed`).
 - Response also carries `wallet: { balance }`.
 
 **Payments** gain `settlement: 'upi' | 'wallet'` — stamped at pay time from the org's mode *then* (never recomputed retroactively). Booth-created support tickets (`POST /booth/tickets`) stamp `session.payment.settlement` the same way if the booth omits it.

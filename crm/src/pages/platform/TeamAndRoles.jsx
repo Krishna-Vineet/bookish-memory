@@ -71,9 +71,11 @@ export default function TeamAndRoles() {
       </div>
 
       {!isOwner && (
-        <WarnBanner tone="info" icon="info" className="mb-16">
-          Your role has read-only visibility here. User management is restricted to the Owner.
-        </WarnBanner>
+        <div  className="mb-16">
+          <WarnBanner tone="info" icon="info">
+            Your role has read-only visibility here. User management is restricted to the Owner.
+          </WarnBanner>
+        </div>
       )}
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 14 }}>
@@ -122,7 +124,7 @@ export default function TeamAndRoles() {
                   <Chip tone={r === ROLES.OWNER ? 'pink' : r === ROLES.PLATFORM_ADMIN ? 'purple' : r === ROLES.SUPPORT_MANAGER ? 'info' : r === ROLES.ORG_ADMIN ? 'active' : 'neutral'}>
                     {ROLE_LABELS[r]}
                   </Chip>
-                  <span className="t11 faint">{r === ROLES.OWNER || r === ROLES.PLATFORM_ADMIN || r === ROLES.SUPPORT_MANAGER ? 'Platform scope' : 'Organisation scope'}</span>
+                  <span className="t11 faint">{r === ROLES.OWNER || r === ROLES.PLATFORM_ADMIN || r === ROLES.SUPPORT_MANAGER ? 'Platform scope' : 'Organization scope'}</span>
                 </div>
                 <p className="t12 muted mt-8" style={{ lineHeight: 1.5 }}>{ROLE_DESCRIPTIONS[r]}</p>
               </div>

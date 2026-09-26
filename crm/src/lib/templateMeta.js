@@ -6,7 +6,7 @@
 // `src/templates/<Component>.jsx` and are registered by
 // `componentId` in `src/templates/registry.jsx`. They cannot be
 // deleted from the CRM (they are code); they are published /
-// unpublished to control global availability to organisations.
+// unpublished to control global availability to organizations.
 //
 // Playground / AI templates store a `design` config instead and
 // are rendered by the Composable component; the playground can

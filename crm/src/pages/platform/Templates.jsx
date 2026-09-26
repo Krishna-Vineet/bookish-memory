@@ -3,7 +3,7 @@
 // Every template on the platform lives here. A template is a hand-crafted
 // design pinned to one layout variant (cut size + orientation + image
 // slots). Owner / Platform Admin control what is GLOBALLY available for
-// organisations to add to their booth events:
+// organizations to add to their booth events:
 //   • Publish / unpublish (active) — unpublished templates disappear from
 //     every org's event picker.
 //   • Create new templates in the Template Playground: pick a layout
@@ -77,7 +77,7 @@ export default function Templates() {
     try {
       const r = await api.platform.updateTemplate(t.id, { active: !t.active })
       setTemplates((list) => list.map((x) => (x.id === t.id ? r.template : x)))
-      toast(r.template.active ? `“${t.name}” published — organisations can now use it` : `“${t.name}” hidden from organisations`, 'info')
+      toast(r.template.active ? `“${t.name}” published — organizations can now use it` : `“${t.name}” hidden from organizations`, 'info')
     } catch (e) {
       toast(e.message, 'error')
     }
@@ -112,7 +112,7 @@ export default function Templates() {
           <div className="page-title">Template Library</div>
           <div className="page-sub">
             Every photo-booth template design, pinned to one of the {LAYOUTS.length} layout variants. Published
-            templates become available for organisations to add to their booth events.
+            templates become available for organizations to add to their booth events.
           </div>
         </div>
         <Button variant="primary" icon="sparkles" onClick={() => setPlayground({ mode: 'new' })}>
@@ -184,7 +184,7 @@ export default function Templates() {
                   </div>
                   <p className="t11 muted" style={{ minHeight: 30, lineHeight: 1.45 }}>{t.description}</p>
                   <div className="row between" style={{ marginTop: 'auto', borderTop: '1px solid var(--line-soft)', paddingTop: 10 }}>
-                    <label className="row gap-8" style={{ cursor: 'pointer', fontSize: 12 }} title="Published templates are selectable by organisations">
+                    <label className="row gap-8" style={{ cursor: 'pointer', fontSize: 12 }} title="Published templates are selectable by organizations">
                       <Toggle on={t.active} onChange={() => togglePublish(t)} />
                       <span className="fw6" style={{ color: t.active ? 'var(--hp-green-ink)' : 'var(--muted)' }}>
                         {t.active ? 'Published' : 'Hidden'}

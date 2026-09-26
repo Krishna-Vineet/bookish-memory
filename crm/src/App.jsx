@@ -7,7 +7,7 @@ import AppShell from './components/layout/AppShell.jsx'
 import Login from './pages/Login.jsx'
 import PlatformDashboard from './pages/platform/PlatformDashboard.jsx'
 import PlatformRevenue from './pages/platform/PlatformRevenue.jsx'
-import Organisations from './pages/platform/Organisations.jsx'
+import Organizations from './pages/platform/Organizations.jsx'
 import Templates from './pages/platform/Templates.jsx'
 import TeamAndRoles from './pages/platform/TeamAndRoles.jsx'
 import AuditLogs from './pages/platform/AuditLogs.jsx'
@@ -24,7 +24,7 @@ import Profile from './pages/Profile.jsx'
 const ROUTES = {
   '/platform/dashboard': { comp: PlatformDashboard, perm: PERMS.PLATFORM_DASHBOARD_VIEW, scope: 'platform' },
   '/platform/revenue': { comp: PlatformRevenue, perm: PERMS.PLATFORM_REVENUE_VIEW, scope: 'platform' },
-  '/platform/organisations': { comp: Organisations, perm: PERMS.PLATFORM_ORGS_VIEW, scope: 'platform' },
+  '/platform/organizations': { comp: Organizations, perm: PERMS.PLATFORM_ORGS_VIEW, scope: 'platform' },
   '/platform/templates': { comp: Templates, perm: PERMS.GLOBAL_TEMPLATES_MANAGE, scope: 'platform' },
   '/platform/team': { comp: TeamAndRoles, roles: [ROLES.OWNER, ROLES.PLATFORM_ADMIN], scope: 'platform' },
   '/platform/audit': { comp: AuditLogs, perm: PERMS.PLATFORM_AUDIT_VIEW, scope: 'platform' },
@@ -46,7 +46,7 @@ export default function App() {
   useEffect(() => {
     if (user && !isPlatformRole(user.role) && !user.orgName) {
       api.org.dashboard()
-        .then((r) => updateUser({ ...user, orgName: r.organisation.name, planStatus: r.plan.status }))
+        .then((r) => updateUser({ ...user, orgName: r.organization.name, planStatus: r.plan.status }))
         .catch(() => {})
     }
   }, [user?.id])

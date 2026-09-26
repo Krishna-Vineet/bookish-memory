@@ -74,7 +74,7 @@ export default function AppShell({ children }) {
         <div className="sidebar-brand">
           <FullLogo size={18} height={30} onDark />
           <div className="brand-text">
-            <Wordmark size={13} onDark suffix="CRM" sub={platform ? 'HappyPix Platform' : user?.orgName || 'Organisation'} />
+            <Wordmark size={13} onDark suffix="CRM" sub={platform ? 'HappyPix Platform' : user?.orgName || 'Organization'} />
           </div>
         </div>
         <nav className="sidebar-nav">
@@ -89,22 +89,8 @@ export default function AppShell({ children }) {
               ))}
             </div>
           ))}
-          <div className="nav-section">Account</div>
-          <Link to="/profile" className={`nav-item${path === '/profile' ? ' active' : ''}`}>
-            <Icon name="user" size={17} />
-            <span className="nav-label">Profile</span>
-          </Link>
         </nav>
-        <div className="sidebar-foot">
-          <div className="row usermeta" style={{ padding: '4px 6px' }}>
-            <Avatar name={user?.name || '?'} size={30} />
-            <div style={{ minWidth: 0, flex: 1 }}>
-              <div style={{ fontSize: 12.5, fontWeight: 620, color: '#fff' }} className="ellipsis">{user?.name}</div>
-              <div style={{ fontSize: 10.5, color: 'var(--sidebar-text)', fontWeight: 600 }}>{user ? ROLE_LABELS[user.role] : ''}</div>
-            </div>
-            <Icon name="chevron-down" size={13} style={{ color: 'var(--sidebar-text)' }} />
-          </div>
-        </div>
+        
       </aside>
       <div className="main">
         <header className="topbar">
@@ -132,7 +118,7 @@ function TopContext() {
   return (
     <span className="chip chip-neutral" style={{ height: 26, fontSize: 12, gap: 8 }}>
       <Icon name="building" size={13} />
-      {user.orgName || 'Organisation'}
+      {user.orgName || 'Organization'}
       {user.planStatus ? (
         <span className={`chip ${statusMeta(user.planStatus).chip}`} style={{ height: 18, padding: '0 7px', fontSize: 10.5 }}>
           {statusMeta(user.planStatus).label}

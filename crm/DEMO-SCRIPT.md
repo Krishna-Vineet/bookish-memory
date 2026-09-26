@@ -12,12 +12,12 @@ restores the seed at any point.
    within 14 days.
 2. **Platform Revenue** — net / FY / month, monthly + quarterly charts, per-org table.
    Filter: plan = *business*, sort = *This month*.
-3. **Organisations** — open **Glow Events** (banned): red banner shows the fraud reason + audit
+3. **Organizations** — open **Glow Events** (banned): red banner shows the fraud reason + audit
    entry. Click **Restore**, then **Suspend** Riya Studio *without* a reason → error
    "reason is required". With a reason → audit-logged.
 4. **Templates & Frames** — Frames section: click **Remove** on *Emerald Luxe* (disabled at
    every org → succeeds). Click **Remove** on *Mono Studio* → **409 "enabled at 1
-   organisation — disable it in their defaults first"**. That's the guard.
+   organization — disable it in their defaults first"**. That's the guard.
 
 > Talking point: statuses are *computed* (trial / active / expiring soon / expired / suspended /
 > banned) — nobody edits a status field. Only the Owner may add/remove frames.
@@ -25,7 +25,7 @@ restores the seed at any point.
 ### 2 · Platform Admin — same console, less power (20 s) → `priya@happypix.com`
 
 - Sidebar has **no Revenue**; Audit is visible but read-only, and the Suspend/Ban buttons are
-  gone from Organisations. On **Templates & Frames** the *New frame / Remove* buttons are
+  gone from Organizations. On **Templates & Frames** the *New frame / Remove* buttons are
   gone too — the admin manages templates, the Owner manages the catalogue.
 - **Templates & Frames** — run the exact original creation flow: **New template** →
   *AI Generate* tab → *Specific Layout*, 2 slots, *Portrait* → prompt → **Generate Template**
@@ -57,7 +57,7 @@ restores the seed at any point.
    Open the payment ticket → **Reopen**.
 5. **Coupon Management** — VIP50 is *exhausted* (0 left, red bar). Create
    `ANNIVERSARY25` — 25 % off, 40 uses, 30 days, tied to one event. Pause it → chip flips.
-6. **Organisation Defaults** — the *only* pricing surface in the CRM: every platform frame
+6. **Organization Defaults** — the *only* pricing surface in the CRM: every platform frame
    rendered as a real print preview, each with a price input and an *Available on booth*
    toggle. Bump *Royal Black* ₹60 → ₹80, switch *Festive Maroon* off at the booths; set the
    idle timeout 600 → 120 s (the "≈ 2 min" hint updates). Save → persisted.
@@ -71,13 +71,13 @@ restores the seed at any point.
 - Sidebar: Dashboard, Events & Devices, Support, Defaults (read-only), Profile. **No** Revenue,
   Coupons, Org Audit, Team.
 - **Events & Devices** — full operational access: can create events, pause/resume, assign booths.
-- **Organisation Defaults** — every input disabled (frame price fields, booth toggles,
+- **Organization Defaults** — every input disabled (frame price fields, booth toggles,
   timeout), no Save button, read-only banner.
 - Type `#/org/revenue` → bounced to dashboard (API would 403 anyway).
 
 ### 5 · Support Manager — platform eyes, no platform hands (10 s) → `support@happypix.com`
 
-- Platform Dashboard + Organisations (read) only. No Revenue, no Templates, no Team, no Audit.
+- Platform Dashboard + Organizations (read) only. No Revenue, no Templates, no Team, no Audit.
 - Demonstrates the third platform role exists but is intentionally narrow.
 
 ---
@@ -96,5 +96,5 @@ restores the seed at any point.
 
 > "Five fixed roles, thirteen screens, one matrix enforced in the sidebar, the router and the
 > API — booths are UUID devices, not users, events carry no price (the frame is the print
-> canvas and only Organisation Defaults hold prices), and every plan limit, coupon and
+> canvas and only Organization Defaults hold prices), and every plan limit, coupon and
 > suspend/ban is decided server-side."

@@ -31,11 +31,11 @@ Any password of 6+ chars signs a demo user in (the quick-login chips use `demo12
 
 | Role | Email | What it can do |
 |---|---|---|
-| Owner | `owner@happypix.com` | Everything: platform revenue, suspend/ban/restore organisations, internal team |
+| Owner | `owner@happypix.com` | Everything: platform revenue, suspend/ban/restore organizations, internal team |
 | Platform Admin | `priya@happypix.com` | Platform console **minus** revenue & user management; can manage templates (frame catalogue changes are Owner-only) |
-| Support Manager | `support@happypix.com` | Platform dashboard, organisations (read) — templates/revenue/team-audit not visible |
-| Organisation Admin | `sana@sunsetweddings.com` | Full org workspace: revenue, events & devices, support, defaults, coupons, team |
-| Organisation Manager | `rohit@sunsetweddings.com` | Operational org workspace: events & devices, support — **no** revenue/defaults/coupons/audit |
+| Support Manager | `support@happypix.com` | Platform dashboard, organizations (read) — templates/revenue/team-audit not visible |
+| Organization Admin | `sana@sunsetweddings.com` | Full org workspace: revenue, events & devices, support, defaults, coupons, team |
+| Organization Manager | `rohit@sunsetweddings.com` | Operational org workspace: events & devices, support — **no** revenue/defaults/coupons/audit |
 
 Other seeded orgs worth exploring (login as their admin, e.g. `arpita@pika.in`):
 Pika (professional, **expiring in 11 days**), Nova Occasions (fresh **trial**),
@@ -62,7 +62,7 @@ v1 shape and this CRM will not work against it.
 | Login / Profile | ✔ | ✔ | ✔ | ✔ | ✔ |
 | Platform Dashboard | ✔ | ✔ | ✔ | — | — |
 | Platform Revenue | ✔ | — | — | — | — |
-| Organisations (suspend/ban/restore = Owner) | ✔ | read | read | — | — |
+| Organizations (suspend/ban/restore = Owner) | ✔ | read | read | — | — |
 | Templates & Frames | manage | manage (frames read-only) | — | — | — |
 | Team & Roles | manage | read | — | — | — |
 | Audit & Logs (platform) | ✔ | ✔ | — | — | — |
@@ -70,7 +70,7 @@ v1 shape and this CRM will not work against it.
 | Org Revenue | — | — | — | ✔ | — |
 | Events & Devices | — | — | — | ✔ | ✔ |
 | Support (guest tickets) | — | — | — | ✔ | ✔ |
-| Organisation Defaults | — | — | — | manage | read-only |
+| Organization Defaults | — | — | — | manage | read-only |
 | Coupon Management | — | — | — | ✔ | — |
 | Org Audit & Logs | — | — | — | ✔ | — |
 
@@ -98,7 +98,7 @@ UUID-paired devices, never users.
 - **A frame is the canvas a print is made on** — its background design carries the
   template's photo slots, and the complete output print (photos + 15% branding footer)
   is printed on the frame. The catalogue is a platform asset: the **Owner** adds and
-  removes frames (remove is blocked while a frame is enabled at any organisation).
+  removes frames (remove is blocked while a frame is enabled at any organization).
 - **Defaults** are the only org config surface — and the only place print pricing
   exists: name, logo, booth idle timeout **in seconds**, and for *every* platform frame a
   price + a "available on booth" toggle, each rendered with the same consistent
@@ -109,7 +109,7 @@ UUID-paired devices, never users.
   Photo-slot coordinates are always computed by the Architecture V1 engine
   (`src/lib/templates.js`; bottom 15% of every canvas reserved for branding). Orgs select
   from the active library when creating events; disabled templates cannot be selected.
-- **Team**: org admins create *Organisation Manager* accounts only (role is server-selected);
+- **Team**: org admins create *Organization Manager* accounts only (role is server-selected);
   owners create *Platform Admin* / *Support Manager* only. Password reset returns a
   one-time temporary password.
 - **Audit** is written on every mutating action and read is permission-gated.
@@ -131,7 +131,7 @@ src/
                   (the consistent frame renderer), layout/AppShell
   pages/
     Login.jsx
-    platform/     Dashboard, Revenue, Organisations, Templates & Frames, TeamAndRoles, AuditLogs
+    platform/     Dashboard, Revenue, Organizations, Templates & Frames, TeamAndRoles, AuditLogs
     org/          Dashboard, Revenue, EventsDevices, Support, OrgDefaults, Coupons
     Profile.jsx
 scripts/

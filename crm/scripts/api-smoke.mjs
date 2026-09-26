@@ -4,7 +4,7 @@
 // Covers the redefined surfaces:
 //   • Event create/update — General/Customisation/Branding, NO price, NO passkey;
 //     branding.logos = sponsor/host/venue logos (0–15, optional)
-//   • Organisation Defaults — idle timeout in SECONDS + layoutPrices
+//   • Organization Defaults — idle timeout in SECONDS + layoutPrices
 //     (per layout iteration: family × image-slot count)
 //   • Templates — platform Template Library: 17 seeds (14 designer + 2 AI +
 //     1 playground), layout-anchored CRUD + AI draft + publish gating
@@ -146,7 +146,7 @@ check('PUT unknown layout key → 400', call('PUT', '/api/org/defaults', { layou
 check('PUT negative price → 400', call('PUT', '/api/org/defaults', { layoutPrices: { '68:4': -5 } }, sana).status === 400)
 
 // ---------------- Cross-role guards ----------------
-check('org admin on platform orgs → 403', call('GET', '/api/platform/organisations', null, sana).status === 403)
+check('org admin on platform orgs → 403', call('GET', '/api/platform/organizations', null, sana).status === 403)
 check('platform admin on org events → 403 (org scope)', call('GET', '/api/org/events', null, pa).status === 403)
 
 // ---------------- Devices: rename + booth operator (v2.1) ----------------
@@ -254,7 +254,7 @@ check('demote back to manager', call('PUT', `/api/org/team/usr-rohit`, { role: '
 check('admin cannot deactivate self → 400', call('POST', `/api/org/team/${r.data ? 'usr-sana' : ''}/deactivate`, {}, sana).status === 400)
 check('deactivate new admin (still ≥1 left) → 200', call('POST', `/api/org/team/${meeraId}/deactivate`, {}, sana).status === 200)
 check('demote last active admin → 409', call('PUT', `/api/org/team/usr-sana`, { role: 'ORG_MANAGER' }, sana).status === 409)
-check('org-detail returns full object (not paginated list)', (() => { const d = call('GET', '/api/platform/organisations/org-sunset', null, owner).data; return Array.isArray(d?.devices) && Array.isArray(d?.events) && d?.plan?.planName && d?.revenue && !('items' in d) })())
+check('org-detail returns full object (not paginated list)', (() => { const d = call('GET', '/api/platform/organizations/org-sunset', null, owner).data; return Array.isArray(d?.devices) && Array.isArray(d?.events) && d?.plan?.planName && d?.revenue && !('items' in d) })())
 
 // ---- Round 5: UPI payouts, wallet, withdrawals, event×booth matrix ----
 r = call('GET', '/api/org/revenue', null, sana)

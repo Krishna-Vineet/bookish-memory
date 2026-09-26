@@ -15,7 +15,7 @@
 //                      each template at its reserved footer positions,
 //                      + default tagline (editable later)
 //
-// Print pricing lives only in Organisation Defaults (per layout iteration,
+// Print pricing lives only in Organization Defaults (per layout iteration,
 // set by the org admin). Booth guest access is handled by the booth app,
 // not a CRM-entered passkey.
 
@@ -579,7 +579,7 @@ function DeviceEditModal({ device, onClose, onSaved }) {
           </Field>
         </div>
         <div style={{ flex: 1 }}>
-          <Field label="Operator phone" hint="Visible to the whole organisation team.">
+          <Field label="Operator phone" hint="Visible to the whole organization team.">
             <TextInput type="tel" value={opPhone} onChange={(e) => setOpPhone(e.target.value)} placeholder="+91 98110 55220" />
           </Field>
         </div>
@@ -728,7 +728,7 @@ function EventEditor({ open, initial, templates, defaults, onClose, onSaved }) {
       open={open}
       onClose={onClose}
       title={initial ? `Edit “${initial.name}”` : 'Create event'}
-      sub="General details, customisation and branding — there is no price here. Layout prices come from Organisation Defaults."
+      sub="General details, customisation and branding — there is no price here. Layout prices come from Organization Defaults."
       width="xwide"
       footer={
         <>
@@ -840,7 +840,7 @@ function EventEditor({ open, initial, templates, defaults, onClose, onSaved }) {
                       {layout.name}
                       <span className="t11 muted fw400" style={{ fontWeight: 400 }}> · {layoutLabel(layout)}</span>
                     </span>
-                    <span className="chip chip-info" style={{ height: 19, fontSize: 10.5 }} title="Guest price from Organisation Defaults">
+                    <span className="chip chip-info" style={{ height: 19, fontSize: 10.5 }} title="Guest price from Organization Defaults">
                       {priceFor(layout) != null ? `₹${priceFor(layout)}/print` : 'not priced'}
                     </span>
                   </div>
@@ -898,7 +898,7 @@ function EventEditor({ open, initial, templates, defaults, onClose, onSaved }) {
           <SectionLabel n={3} title="Branding" />
           <Field
             label="Event logos — sponsors, host, venue, teams"
-            hint="Optional, up to 15. These are NOT your organisation logo — they are the extra layer of personalisation for this event (like BMW, Audi and Ferrari logos at a car race). Each template places them at its reserved footer positions."
+            hint="Optional, up to 15. These are NOT your organization logo — they are the extra layer of personalisation for this event (like BMW, Audi and Ferrari logos at a car race). Each template places them at its reserved footer positions."
           >
             <div
               style={{
@@ -955,7 +955,7 @@ function EventEditor({ open, initial, templates, defaults, onClose, onSaved }) {
                 <div className="t11 muted" style={{ maxWidth: 190, lineHeight: 1.55 }}>
                   Previewing <b>{previewTemplate.name}</b> ({layoutShortLabel(layoutById(previewTemplate.layoutId))}). Guests pay{' '}
                   <b>{priceFor(layoutById(previewTemplate.layoutId)) != null ? `₹${priceFor(layoutById(previewTemplate.layoutId))}` : 'no price set'}</b> for
-                  this layout — set in Organisation Defaults, never here. <b>{form.templateIds.length}</b> template(s) available at this event.
+                  this layout — set in Organization Defaults, never here. <b>{form.templateIds.length}</b> template(s) available at this event.
                 </div>
               </div>
             ) : (

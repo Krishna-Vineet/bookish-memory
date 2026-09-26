@@ -44,7 +44,7 @@ export default function OrgRevenue() {
     <div>
       <div className="page-head">
         <div>
-          <div className="page-title">Organisation Revenue</div>
+          <div className="page-title">Organization Revenue</div>
           <div className="page-sub">What your booths earn — print sales per event, per device. Read-only reporting.</div>
         </div>
         <div className="row gap-8">
@@ -87,7 +87,7 @@ export default function OrgRevenue() {
                   icon="arrow-up-right"
                   disabled={!wallet || wallet.balance < (wallet.minWithdrawal || 500) || !payout.upiId}
                   onClick={() => setWithdrawOpen(true)}
-                  title={!payout.upiId ? 'Add your UPI ID in Organisation Defaults first' : wallet && wallet.balance < (wallet.minWithdrawal || 500) ? `Minimum withdrawal is ${inr(wallet.minWithdrawal || 500)}` : undefined}
+                  title={!payout.upiId ? 'Add your UPI ID in Organization Defaults first' : wallet && wallet.balance < (wallet.minWithdrawal || 500) ? `Minimum withdrawal is ${inr(wallet.minWithdrawal || 500)}` : undefined}
                 >
                   Withdraw
                 </Button>
@@ -101,7 +101,7 @@ export default function OrgRevenue() {
             {!payout.upiId && isAdmin ? (
               <div className="t12 mt-12" style={{ color: 'var(--warn)' }}>
                 <Icon name="alert" size={13} style={{ verticalAlign: '-2px', marginRight: 5 }} />
-                Add your UPI ID in <a href="#/org/defaults" style={{ color: 'var(--hp-pink-deep)', fontWeight: 600 }}>Organisation Defaults</a> to withdraw.
+                Add your UPI ID in <a href="#/org/defaults" style={{ color: 'var(--hp-pink-deep)', fontWeight: 600 }}>Organization Defaults</a> to withdraw.
               </div>
             ) : null}
           </div>
@@ -141,7 +141,7 @@ export default function OrgRevenue() {
                 ]}
               />
               <p className="t11 faint mt-12" style={{ lineHeight: 1.5 }}>
-                Route is decided by your <b>Receive money directly in UPI</b> switch at the moment each guest pays. Change it in Organisation Defaults.
+                Route is decided by your <b>Receive money directly in UPI</b> switch at the moment each guest pays. Change it in Organization Defaults.
               </p>
             </div>
           </div>
@@ -336,7 +336,7 @@ function WithdrawModal({ open, onClose, wallet, upiId, onDone }) {
       open={open}
       onClose={onClose}
       title="Withdraw from wallet"
-      sub="Money is credited to the bank account linked to your organisation UPI ID."
+      sub="Money is credited to the bank account linked to your organization UPI ID."
       footer={
         <>
           <Button variant="ghost" onClick={onClose} disabled={busy}>Cancel</Button>

@@ -83,7 +83,7 @@ export default function Support() {
       <div className="page-head">
         <div>
           <div className="page-title">Support</div>
-          <div className="page-sub">Guest issues raised from your booths and download pages. Platform support is handled outside the CRM.</div>
+          <div className="page-sub">Guest issues raised from your booths and download pages.</div>
         </div>
       </div>
 
@@ -204,7 +204,7 @@ export default function Support() {
 
             <div>
               {ticket.messages.map((m) => {
-                const mine = m.author.includes('Organisation')
+                const mine = m.author.includes('Organization')
                 return (
                   <div key={m.id} className="thread-msg" style={mine ? { flexDirection: 'row-reverse' } : undefined}>
                     <span className="avatar" style={{ width: 28, height: 28, fontSize: 10.5, background: mine ? 'var(--hp-pink)' : avatarColor(m.author), flex: 'none' }}>

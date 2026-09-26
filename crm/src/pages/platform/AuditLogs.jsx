@@ -8,7 +8,7 @@ import { ROLES, ROLE_LABELS, isPlatformRole } from '../../lib/roles.js'
 
 const ACTION_GROUPS = [
   { id: 'auth', label: 'Logins & auth' },
-  { id: 'organisation', label: 'Organisations' },
+  { id: 'organization', label: 'Organizations' },
   { id: 'user', label: 'Users & team' },
   { id: 'template', label: 'Templates' },
   { id: 'event', label: 'Events' },
@@ -63,8 +63,8 @@ export default function AuditLogs() {
           <div className="page-title">Audit & Logs</div>
           <div className="page-sub">
             {platform
-              ? 'Platform-level actions: logins, organisations, plans, templates, internal users and failed auth.'
-              : 'Actions inside your organisation: events, devices, coupons, team, defaults and ticket resolutions.'}
+              ? 'Platform-level actions: logins, organizations, plans, templates, internal users and failed auth.'
+              : 'Actions inside your organization: events, devices, coupons, team, defaults and ticket resolutions.'}
           </div>
         </div>
       </div>

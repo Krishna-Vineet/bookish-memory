@@ -84,7 +84,7 @@ export default function Coupons() {
         <div>
           <div className="page-title">Coupon Management</div>
           <div className="page-sub">
-            Private, organisation-owned coupons. Booths show only an “Enter Coupon” field — your coupons are never listed publicly.
+            Private, organization-owned coupons. Booths show only an “Enter Coupon” field — your coupons are never listed publicly.
           </div>
         </div>
         <Button variant="primary" icon="plus" onClick={() => { setEditor('new'); setDraft(null) }}>New coupon</Button>

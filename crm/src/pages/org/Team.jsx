@@ -1,7 +1,7 @@
-// Team & Roles (organisation screen).
+// Team & Roles (organization screen).
 //
-// Org Admins add and manage their own Organisation Admins and Managers —
-// same fixed role model as the platform, scoped to this organisation:
+// Org Admins add and manage their own Organization Admins and Managers —
+// same fixed role model as the platform, scoped to this organization:
 //   • Admin can add members (Admin or Manager), edit details, change roles
 //     and deactivate — with last-active-admin protection.
 //   • Managers get a read-only view (no actions, server-enforced too).
@@ -52,7 +52,7 @@ export default function OrgTeam() {
     try {
       if (editing === 'new') {
         await api.org.createMember({ name: draft.name.trim(), email: draft.email.trim(), password: draft.password, role: draft.role })
-        toast(`${draft.role === ROLES.ORG_ADMIN ? 'Organisation Admin' : 'Organisation Manager'} added — share the password securely, they change it after first sign-in`)
+        toast(`${draft.role === ROLES.ORG_ADMIN ? 'Organization Admin' : 'Organization Manager'} added — share the password securely, they change it after first sign-in`)
       } else {
         const body = { name: draft.name.trim(), email: draft.email.trim() }
         if (draft.role && draft.role !== editing.role) body.role = draft.role
@@ -93,8 +93,8 @@ export default function OrgTeam() {
           <div className="page-title">Team &amp; Roles</div>
           <div className="page-sub">
             {canManage
-              ? 'Your organisation team. Add Organisation Admins and Managers — roles and permissions are fixed by the platform.'
-              : 'Your organisation team. Read-only for your role — ask an Organisation Admin to make changes.'}
+              ? 'Your organization team. Add Organization Admins and Managers — roles and permissions are fixed by the platform.'
+              : 'Your organization team. Read-only for your role — ask an Organization Admin to make changes.'}
           </div>
         </div>
         {canManage ? <Button variant="primary" icon="plus" onClick={openNew}>Add member</Button> : null}
@@ -102,13 +102,13 @@ export default function OrgTeam() {
 
       {!canManage && (
         <WarnBanner tone="info" icon="info" className="mb-16">
-          Your role has read-only visibility here. Members are added and managed by Organisation Admins.
+          Your role has read-only visibility here. Members are added and managed by Organization Admins.
         </WarnBanner>
       )}
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 14 }}>
         <Card>
-          <div className="card-head"><div className="card-title">Organisation team</div><span className="t11 faint">{members ? `${members.length} member${members.length === 1 ? '' : 's'}` : '…'}</span></div>
+          <div className="card-head"><div className="card-title">Organization team</div><span className="t11 faint">{members ? `${members.length} member${members.length === 1 ? '' : 's'}` : '…'}</span></div>
           {!members ? (
             <PageLoader />
           ) : members.length === 0 ? (
@@ -155,7 +155,7 @@ export default function OrgTeam() {
           <div className="card-head">
             <div>
               <div className="card-title">Fixed role model</div>
-              <div className="card-sub">Organisation scope · no custom permissions</div>
+              <div className="card-sub">Organization scope · no custom permissions</div>
             </div>
           </div>
           <div>
@@ -163,7 +163,7 @@ export default function OrgTeam() {
               <div key={r} style={{ padding: '13px 18px', borderBottom: i === 1 ? 'none' : '1px solid var(--line-soft)' }}>
                 <div className="row between">
                   <Chip tone={r === ROLES.ORG_ADMIN ? 'active' : 'neutral'}>{ROLE_LABELS[r]}</Chip>
-                  <span className="t11 faint">{r === ROLES.ORG_ADMIN ? 'Full organisation control' : 'Operations only'}</span>
+                  <span className="t11 faint">{r === ROLES.ORG_ADMIN ? 'Full organization control' : 'Operations only'}</span>
                 </div>
                 <p className="t12 muted mt-8" style={{ lineHeight: 1.5 }}>{ROLE_DESCRIPTIONS[r]}</p>
               </div>
@@ -173,7 +173,7 @@ export default function OrgTeam() {
                 <Icon name="lock" size={12} style={{ verticalAlign: '-1px', marginRight: 5 }} />
                 Passwords are <b>self-service</b> — members use “Forgot password” on the sign-in screen (a 6-digit code goes to their
                 email). Admins can never see or reset another member's password. The last active admin cannot be demoted or
-                deactivated, so an organisation can never lock itself out.
+                deactivated, so an organization can never lock itself out.
               </p>
             </div>
           </div>
@@ -184,7 +184,7 @@ export default function OrgTeam() {
         open={!!editing}
         onClose={() => setEditing(null)}
         title={editing === 'new' ? 'Add team member' : `Edit ${editing?.name}`}
-        sub={editing === 'new' ? 'Organisation Admin or Organisation Manager — both use the same fixed permission model.' : 'Change name, email or role. The member keeps their password.'}
+        sub={editing === 'new' ? 'Organization Admin or Organization Manager — both use the same fixed permission model.' : 'Change name, email or role. The member keeps their password.'}
         footer={
           <>
             {error ? <span className="input-error" style={{ marginRight: 'auto' }}>{error}</span> : null}
@@ -208,8 +208,8 @@ export default function OrgTeam() {
             ) : null}
             <Field label="Role" required hint={draft.role === ROLES.ORG_ADMIN ? 'Admins manage events, devices, revenue, coupons, defaults and the team.' : 'Managers operate events, devices and guest support — read-only elsewhere.'}>
               <Select value={draft.role} onChange={(e) => setDraft({ ...draft, role: e.target.value })}>
-                <option value={ROLES.ORG_ADMIN}>Organisation Admin</option>
-                <option value={ROLES.ORG_MANAGER}>Organisation Manager</option>
+                <option value={ROLES.ORG_ADMIN}>Organization Admin</option>
+                <option value={ROLES.ORG_MANAGER}>Organization Manager</option>
               </Select>
             </Field>
           </div>

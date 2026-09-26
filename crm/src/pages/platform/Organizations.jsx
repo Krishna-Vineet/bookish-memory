@@ -10,7 +10,7 @@ import { inr, dateShort, relativeTime } from '../../lib/format.js'
 import { statusMeta, PLANS } from '../../lib/plans.js'
 import { ROLES } from '../../lib/roles.js'
 
-export default function Organisations() {
+export default function Organizations() {
   const { user, toast } = useApp()
   const isOwner = user.role === ROLES.OWNER
   const [rows, setRows] = useState(null)
@@ -29,7 +29,7 @@ export default function Organisations() {
     if (status) q.set('status', status)
     if (plan) q.set('plan', plan)
     q.set('limit', '50')
-    api.platform.organisations('?' + q.toString()).then((r) => setRows(r.items)).catch(() => setRows([]))
+    api.platform.organizations('?' + q.toString()).then((r) => setRows(r.items)).catch(() => setRows([]))
   }, [search, status, plan])
 
   useEffect(() => {
@@ -40,7 +40,7 @@ export default function Organisations() {
   const openDetail = (org) => {
     setDetailLoading(true)
     setDetail({ ...org, loading: true })
-    api.platform.organisation(org.id)
+    api.platform.organization(org.id)
       .then((d) => setDetail({ ...org, ...d, loading: false, loadError: null }))
       .catch((e) => { toast(e.message, 'error'); setDetail({ ...org, loading: false, loadError: e.message }) })
   }
@@ -75,7 +75,7 @@ export default function Organisations() {
     <div>
       <div className="page-head">
         <div>
-          <div className="page-title">Organisations</div>
+          <div className="page-title">Organizations</div>
           <div className="page-sub">Every client on HappyPix with plan and operational health. Statuses are computed automatically — {isOwner ? 'you can suspend, ban or restore.' : 'read-only for your role.'}</div>
         </div>
       </div>
@@ -96,13 +96,13 @@ export default function Organisations() {
         {!rows ? (
           <PageLoader />
         ) : rows.length === 0 ? (
-          <EmptyState icon="building" title="No organisations found" message="Try changing your search or filters." />
+          <EmptyState icon="building" title="No organizations found" message="Try changing your search or filters." />
         ) : (
           <div className="table-wrap">
             <table className="hp-table">
               <thead>
                 <tr>
-                  <th>Organisation</th>
+                  <th>Organization</th>
                   <th>Plan</th>
                   <th>Status</th>
                   <th>Expiry</th>
@@ -164,7 +164,7 @@ export default function Organisations() {
         footer={
           detail && isOwner && !detail.loading ? (
             ['suspended', 'banned'].includes(detail.status) ? (
-              <Button variant="primary" icon="check" style={{ width: '100%' }} onClick={() => setAction({ org: detail, kind: 'restore' })}>Restore organisation</Button>
+              <Button variant="primary" icon="check" style={{ width: '100%' }} onClick={() => setAction({ org: detail, kind: 'restore' })}>Restore organization</Button>
             ) : (
               <div className="row gap-12">
                 <Button variant="outline" style={{ flex: 1 }} onClick={() => setAction({ org: detail, kind: 'suspend' })}>Suspend</Button>
@@ -196,19 +196,19 @@ export default function Organisations() {
         }
         message={
           action?.kind === 'suspend'
-            ? 'The organisation can log in to view limited account status, but cannot create events or register devices. This action is audit logged.'
+            ? 'The organization can log in to view limited account status, but cannot create events or register devices. This action is audit logged.'
             : action?.kind === 'ban'
-              ? 'The organisation will lose CRM access and its booths will be blocked from connecting. Restore later if needed. This action is audit logged.'
-              : 'The organisation regains full access according to its plan state. This action is audit logged.'
+              ? 'The organization will lose CRM access and its booths will be blocked from connecting. Restore later if needed. This action is audit logged.'
+              : 'The organization regains full access according to its plan state. This action is audit logged.'
         }
-        confirmLabel={action?.kind === 'suspend' ? 'Suspend' : action?.kind === 'ban' ? 'Ban organisation' : 'Restore'}
+        confirmLabel={action?.kind === 'suspend' ? 'Suspend' : action?.kind === 'ban' ? 'Ban organization' : 'Restore'}
       >
         {action && action.kind !== 'restore' ? (
           <FieldWrap label="Reason" required>
             <TextArea
               value={reason}
               onChange={(e) => setReason(e.target.value)}
-              placeholder="Why is this organisation being suspended/banned? This is stored in the audit log."
+              placeholder="Why is this organization being suspended/banned? This is stored in the audit log."
             />
           </FieldWrap>
         ) : null}
@@ -226,7 +226,7 @@ function FieldWrap({ label, required, children }) {
   )
 }
 
-// ---- Organisation detail (drawer body) ----
+// ---- Organization detail (drawer body) ----
 // Every section renders an explicit "not available" state when the API
 // omitted it, instead of blank/undefined cells.
 function OrgDetailBody({ detail, onRetry }) {

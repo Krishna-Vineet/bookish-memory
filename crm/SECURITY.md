@@ -102,7 +102,7 @@ Replace `https://api.happypix.example` in `connect-src` with your real
       to cookies, remove `localStorage` token storage in `src/api/client.js`.
 - [ ] CORS: allow only the CRM origin; no `*` with credentials.
 - [ ] Log every auth event and privileged mutation to an append-only audit
-      store (the CRM already renders `platform.*` / `organisation.*` actions).
+      store (the CRM already renders `platform.*` / `organization.*` actions).
 - [ ] Booth endpoints (`/booth/*`) authenticate with the device UUID — rotate
       it on re-pair and rate-limit per device.
 - [ ] Dependency scanning (`npm audit`, Dependabot) in CI.

@@ -62,7 +62,7 @@ export function ComposableTemplate({ layout, geo, template, photos, logos, title
         />
       ))}
       {!d.titleBand && showTitle ? (
-        <text x={w / 2} y={fy - fh * 0.34} textAnchor="middle" fontFamily={font} fontSize={Math.min(64, w * 0.09)} fontWeight="700" fill={textColor} letterSpacing="2">
+        <text x={w / 2} y={fy + fh * 0.17} textAnchor="middle" fontFamily={font} fontSize={Math.min(64, w * 0.09)} fontWeight="700" fill={textColor} letterSpacing="2">
           {showTitle}
         </text>
       ) : null}

@@ -43,6 +43,9 @@
 
   /* Solid "ink" surfaces (dark buttons, toasts) — flip in dark mode */
   --solid: #191424;
+  --solid-success: #12291A;
+  --solid-error: #33120E;
+  --solid-info: #101B30;
   --solid-fg: #FFFFFF;
   --solid-hover: #2A2338;
   --overlay: rgba(20, 16, 32, 0.5);
@@ -104,6 +107,9 @@ html[data-theme="dark"] {
   --warn-soft: rgba(232, 176, 75, 0.15);
 
   --solid: #ECE9F5;
+  --solid-success: #bff9d3;
+  --solid-error: #f6c5c0;
+  --solid-info: #bfd3f7;
   --solid-fg: #16121F;
   --solid-hover: #DAD5EB;
   --overlay: rgba(4, 2, 9, 0.64);
@@ -373,9 +379,9 @@ table.hp-table { width: 100%; border-collapse: collapse; font-size: 13px; }
   display: flex; align-items: center; gap: 10px; max-width: 380px;
   animation: toast-in 0.22s ease;
 }
-.toast.success { background: #12291A; }
-.toast.error { background: #33120E; }
-.toast.info { background: #101B30; }
+.toast.success { background: var(--solid-success); }
+.toast.error { background: var(--solid-error); }
+.toast.info { background: var(--solid-info); }
 @keyframes toast-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 
 .progress { height: 7px; border-radius: 999px; background: var(--line-soft); overflow: hidden; }

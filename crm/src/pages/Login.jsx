@@ -64,7 +64,7 @@ export default function Login() {
             {[
               ['monitor', 'Booth devices pair by UUID'],
               ['revenue', 'Live revenue per event & booth'],
-              ['tag', 'Organisation-owned coupons'],
+              ['tag', 'Organization-owned coupons'],
               ['headset', 'Guest support inbox'],
             ].map(([ic, t]) => (
               <span key={t} className="chip" style={{ background: 'rgba(255,255,255,0.09)', color: 'rgba(255,255,255,0.85)', height: 28, fontSize: 12, backdropFilter: 'blur(6px)' }}>

@@ -62,7 +62,7 @@ export default function PlatformRevenue() {
         <StatCard label="Net platform revenue" value={inr(data.net)} icon="revenue" foot="all subscriptions, till date" />
         <StatCard label="This financial year" value={inr(data.fyRevenue)} icon="calendar" iconBg="var(--hp-blue-soft)" iconColor="var(--hp-blue)" foot="Apr 2026 → Mar 2027" />
         <StatCard label="This month" value={inr(data.monthRevenue)} icon="zap" iconBg="var(--hp-green-soft)" iconColor="var(--hp-green-ink)" foot="September 2026" />
-        <StatCard label="Paying organisations" value={data.orgs.filter((o) => o.revenue > 0).length} icon="building" iconBg="var(--hp-purple-soft)" iconColor="var(--hp-purple)" foot={`of ${data.orgs.length} total`} />
+        <StatCard label="Paying organizations" value={data.orgs.filter((o) => o.revenue > 0).length} icon="building" iconBg="var(--hp-purple-soft)" iconColor="var(--hp-purple)" foot={`of ${data.orgs.length} total`} />
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: 14 }} className="mb-16">
@@ -110,8 +110,8 @@ export default function PlatformRevenue() {
 
       <Card className="mt-16">
         <CardHead
-          title="Organisation revenue"
-          sub="Subscription purchases per organisation"
+          title="Organization revenue"
+          sub="Subscription purchases per organization"
           children={
             <div className="row gap-8">
               <Select value={planFilter} onChange={(e) => setPlanFilter(e.target.value)} style={{ width: 130, height: 32, fontSize: 12.5 }}>
@@ -134,7 +134,7 @@ export default function PlatformRevenue() {
           <table className="hp-table">
             <thead>
               <tr>
-                <th>Organisation</th>
+                <th>Organization</th>
                 <th>Plan</th>
                 <th>Status</th>
                 <th>Expiry</th>

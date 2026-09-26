@@ -15,7 +15,7 @@ export function planDef(key) {
   return PLANS[key] || PLANS.trial
 }
 
-// Plan / organisation statuses (spec 05 §3)
+// Plan / organization statuses (spec 05 §3)
 export const PLAN_STATUSES = {
   trial: { label: 'Trial', chip: 'chip-trial' },
   active: { label: 'Active', chip: 'chip-active' },

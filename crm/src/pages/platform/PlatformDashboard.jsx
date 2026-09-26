@@ -31,7 +31,7 @@ export default function PlatformDashboard() {
       <div className="page-head">
         <div>
           <div className="page-title">Platform Dashboard</div>
-          <div className="page-sub">Health and usage across every HappyPix organisation — {dateShort(new Date().toISOString())}</div>
+          <div className="page-sub">Health and usage across every HappyPix organization — {dateShort(new Date().toISOString())}</div>
         </div>
       </div>
 
@@ -70,8 +70,8 @@ export default function PlatformDashboard() {
       )}
 
       <div className="stat-grid mb-16" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))' }}>
-        <StatCard label="Organisations" value={data.orgs.total} icon="building" foot={`${data.orgs.active} active · ${data.orgs.trial} trial`} />
-        <StatCard label="Active organisations" value={data.orgs.active} icon="check-circle" iconBg="var(--hp-green-soft)" iconColor="var(--hp-green-ink)" foot={`${data.orgs.suspended} suspended · ${data.orgs.banned} banned`} />
+        <StatCard label="Organizations" value={data.orgs.total} icon="building" foot={`${data.orgs.active} active · ${data.orgs.trial} trial`} />
+        <StatCard label="Active organizations" value={data.orgs.active} icon="check-circle" iconBg="var(--hp-green-soft)" iconColor="var(--hp-green-ink)" foot={`${data.orgs.suspended} suspended · ${data.orgs.banned} banned`} />
         <StatCard label="Devices connected" value={data.devices.total} icon="monitor" iconBg="var(--hp-blue-soft)" iconColor="var(--hp-blue)" foot={`${data.devices.online} online now`} />
         <StatCard label="Active events" value={data.events.active} icon="calendar" iconBg="var(--hp-purple-soft)" iconColor="var(--hp-purple)" foot={`${data.events.upcoming} upcoming`} />
       </div>
@@ -119,11 +119,11 @@ export default function PlatformDashboard() {
         </Card>
 
         <Card>
-          <CardHead title="Organisations near plan limits" sub="Upgrade conversations to start" />
+          <CardHead title="Organizations near plan limits" sub="Upgrade conversations to start" />
           {data.nearLimits.length === 0 ? (
             <div className="empty" style={{ padding: '30px 16px' }}>
               <h3>All healthy</h3>
-              <p>No organisation is near its device or event limits.</p>
+              <p>No organization is near its device or event limits.</p>
             </div>
           ) : (
             <div>
@@ -161,7 +161,7 @@ export default function PlatformDashboard() {
       </div>
 
       <Card className="mt-16">
-        <CardHead title="Recent organisation signups" sub="New clients on the platform" />
+        <CardHead title="Recent organization signups" sub="New clients on the platform" />
         <div>
           {data.recentSignups.map((o) => (
             <div key={o.id} className="row between" style={{ padding: '12px 20px', borderBottom: '1px solid var(--line-soft)' }}>

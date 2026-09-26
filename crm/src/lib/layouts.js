@@ -98,7 +98,7 @@ export const TEMPLATE_CATEGORIES = ['Classic', 'Weddings', 'Parties', 'Corporate
 
 // ---------- suggested price per layout iteration ----------
 // What the guest pays for the print — org admins override per layout
-// in Organisation Defaults. Price does not change with orientation
+// in Organization Defaults. Price does not change with orientation
 // (same print cost), only with the layout's size and image count.
 const SLOT_ADD = { 1: 0, 3: 10, 4: 10, 5: 20, 6: 30, 8: 60, 9: 40 }
 
@@ -110,7 +110,7 @@ export function suggestedPrice(familyId, slots) {
 
 export const PRICE_KEY = (familyId, slots) => `${familyId}:${slots}`
 
-// full suggested price map — the seed/default for every organisation
+// full suggested price map — the seed/default for every organization
 export function suggestedPriceMap() {
   const out = {}
   for (const f of LAYOUT_FAMILIES) for (const s of f.slots) out[PRICE_KEY(f.id, s)] = suggestedPrice(f.id, s)

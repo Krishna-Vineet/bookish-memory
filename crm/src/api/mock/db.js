@@ -110,7 +110,7 @@ const USERS = [
   { id: 'usr-nandini', name: 'Nandini Bose', email: 'nandini@novaoccasions.in', password: 'demo123', role: 'ORG_ADMIN', organizationId: 'org-nova', status: 'active', createdAt: daysAgo(8), lastLoginAt: daysAgo(0, 8, 55) },
 ]
 
-// ---------------- Organisations ----------------
+// ---------------- Organizations ----------------
 const ORGS = [
   { id: 'org-sunset', name: 'Sunset Weddings', ownerName: 'Sana Kapoor', email: 'sana@sunsetweddings.com', phone: '+91 98100 22331', country: 'IN', plan: 'business', status: 'active', logoUrl: null, createdAt: daysAgo(160), lastActiveAt: daysAgo(0, 9, 58), suspendReason: null },
   { id: 'org-kade', name: 'Kade Events', ownerName: 'Kunal Aneja', email: 'kunal@kade.in', phone: '+91 99530 44112', country: 'IN', plan: 'starter', status: 'active', logoUrl: null, createdAt: daysAgo(52), lastActiveAt: daysAgo(1, 20, 14), suspendReason: null },
@@ -180,7 +180,7 @@ const EVENTS = [
   { id: 'evt-riya-1', organizationId: 'org-riya', name: "Kajri's 30th", clientName: 'Kajri Ahuja', location: 'Rajpur Road, Dehradun', startDate: daysAgo(16, 19), endDate: daysAgo(16, 23, 30), paused: false, templateIds: ['hp-classic-46v1'], filters: ['party', 'soft'], digitalCopy: true, branding: { logos: [], tagline: 'Kajri @ 30' }, shortCode: 'K30TH', createdAt: daysAgo(21) },
 ]
 
-// ---------------- Organisation defaults (the single org config doc) ----------------
+// ---------------- Organization defaults (the single org config doc) ----------------
 // Layouts & print pricing: the org admin sets the guest-facing price for
 // every layout iteration (family + image slots). A price here is what the
 // booth shows when guests pick a page size; a cleared price removes the
@@ -211,7 +211,7 @@ const WITHDRAWALS = [
   { id: 'wd-5', organizationId: 'org-alpha', amount: 500, upiId: 'alphabooths@ybl', status: 'paid', reference: 'HPX-PO-2605-0099', requestedAt: daysAgo(120), paidAt: daysAgo(119), requestedBy: null },
 ]
 
-// ---------------- Coupons (organisation-owned) ----------------
+// ---------------- Coupons (organization-owned) ----------------
 const COUPONS = [
   { id: 'cup-sun-1', organizationId: 'org-sunset', code: 'WEDDING20', type: 'percentage', value: 20, quantity: 200, usedCount: 164, expiryDate: D('2026-12-31T23:59:00+05:30'), eventIds: ['evt-sun-1'], status: 'active', createdAt: daysAgo(18), updatedAt: daysAgo(18) },
   { id: 'cup-sun-2', organizationId: 'org-sunset', code: 'VIP50', type: 'percentage', value: 50, quantity: 10, usedCount: 10, expiryDate: D('2026-09-30T23:59:00+05:30'), eventIds: ['evt-sun-1'], status: 'active', createdAt: daysAgo(20), updatedAt: daysAgo(2) },
@@ -241,7 +241,7 @@ const TICKETS = [
     createdAt: daysAgo(0, 9, 40), updatedAt: daysAgo(0, 10, 5),
     messages: [
       { id: 'm1', author: 'Guest (booth widget)', at: daysAgo(0, 9, 40), text: 'The lawn booth printer is jammed. Couple wants their strip printed for the pheras. Please help!' },
-      { id: 'm2', author: 'Rohit Das (Organisation Manager)', at: daysAgo(0, 10, 5), text: 'Rohit here — I have asked the booth operator to power-cycle the printer. If it fails in 5 minutes we will switch to Booth 01 with a manual print queue.' },
+      { id: 'm2', author: 'Rohit Das (Organization Manager)', at: daysAgo(0, 10, 5), text: 'Rohit here — I have asked the booth operator to power-cycle the printer. If it fails in 5 minutes we will switch to Booth 01 with a manual print queue.' },
     ],
     resolution: null,
   },
@@ -284,7 +284,7 @@ const TICKETS = [
     createdAt: daysAgo(0, 18, 30), updatedAt: daysAgo(0, 20, 10),
     messages: [
       { id: 'm1', author: 'Guest (booth widget)', at: daysAgo(0, 18, 30), text: 'Poster at the venue says use GZFLASH15 for 15% off, but the booth says coupon exhausted.' },
-      { id: 'm2', author: 'Vikram Sethi (Organisation Admin)', at: daysAgo(0, 20, 10), text: 'Coupon is fully used (300/300). Venue staff should take it off posters. I am creating a fresh 100-quantity batch for tomorrow.' },
+      { id: 'm2', author: 'Vikram Sethi (Organization Admin)', at: daysAgo(0, 20, 10), text: 'Coupon is fully used (300/300). Venue staff should take it off posters. I am creating a fresh 100-quantity batch for tomorrow.' },
     ],
     resolution: null,
   },
@@ -299,7 +299,7 @@ const TICKETS = [
     createdAt: daysAgo(2, 17, 45), updatedAt: daysAgo(2, 19, 0),
     messages: [
       { id: 'm1', author: 'Guest (booth widget)', at: daysAgo(2, 17, 45), text: 'Our kid’s name was spelled wrong on the frame ("Anaya" instead of "Ananya").' },
-      { id: 'm2', author: 'Kunal Aneja (Organisation Admin)', at: daysAgo(2, 19, 0), text: 'Re-printed with the correct spelling and shared the digital copy on WhatsApp. Apologised on our behalf.' },
+      { id: 'm2', author: 'Kunal Aneja (Organization Admin)', at: daysAgo(2, 19, 0), text: 'Re-printed with the correct spelling and shared the digital copy on WhatsApp. Apologised on our behalf.' },
     ],
     resolution: 'Correct name applied to event branding; reprint issued to guest.',
   },
@@ -328,7 +328,7 @@ const TICKETS = [
     createdAt: daysAgo(5, 12, 0), updatedAt: daysAgo(4, 10, 30),
     messages: [
       { id: 'm1', author: 'Guest (download page)', at: daysAgo(5, 12, 0), text: 'Please share invoice for the event package for our expenses.' },
-      { id: 'm2', author: 'Arpita Shah (Organisation Admin)', at: daysAgo(4, 10, 30), text: 'Invoice HAP-EVT-2609-0342 shared to their email. Closing.' },
+      { id: 'm2', author: 'Arpita Shah (Organization Admin)', at: daysAgo(4, 10, 30), text: 'Invoice HAP-EVT-2609-0342 shared to their email. Closing.' },
     ],
     resolution: 'Invoice shared with client accounts team.',
   },
@@ -365,35 +365,35 @@ const A = (at, actorId, action, entity, summary, ip, severity = 'info') => ({
 const AUDIT = [
   A(daysAgo(0, 8, 12), 'usr-owner', 'platform.auth.login', 'user', 'Owner Harshit Mehta signed in to CRM', '103.89.20.11'),
   A(daysAgo(0, 9, 4), 'usr-pa', 'platform.auth.login', 'user', 'Platform Admin Priya Nair signed in to CRM', '152.58.99.4'),
-  A(daysAgo(0, 10, 2), 'usr-sana', 'organisation.auth.login', 'user', 'Sana Kapoor signed in (Sunset Weddings)', '49.36.101.77', 'info', 'org-sunset'),
-  A(daysAgo(0, 10, 41), 'usr-vikram', 'organisation.auth.login', 'user', 'Vikram Sethi signed in (Tech Closet)', '182.64.220.9', 'info', 'org-tech'),
+  A(daysAgo(0, 10, 2), 'usr-sana', 'organization.auth.login', 'user', 'Sana Kapoor signed in (Sunset Weddings)', '49.36.101.77', 'info', 'org-sunset'),
+  A(daysAgo(0, 10, 41), 'usr-vikram', 'organization.auth.login', 'user', 'Vikram Sethi signed in (Tech Closet)', '182.64.220.9', 'info', 'org-tech'),
   A(daysAgo(1, 12, 40), 'usr-kade-admin-op', 'device.registered', 'device', 'Device registered: KADE Main Booth (Rohini, Delhi)', '182.64.19.101', 'info', 'org-kade'),
   A(daysAgo(1, 16, 20), 'usr-rohit', 'event.assigned_to_device', 'event', 'Event “Kapoor–Verma Wedding” assigned to Booth 02 — Lawn', '49.36.101.77', 'info', 'org-sunset'),
   A(daysAgo(1, 18, 5), 'usr-arpita', 'coupon.created', 'coupon', 'Coupon LAUNCH30 created (30% off, 500 uses)', '117.96.11.30', 'info', 'org-pika'),
   A(daysAgo(2, 11, 30), 'usr-pa', 'platform.template.updated', 'template', 'Global template “Neon Party” updated (preview + layout)', '152.58.99.4'),
   A(daysAgo(2, 14, 45), 'usr-meera', 'event.created', 'event', 'Event “Startup Meetup Booth” created', '182.64.220.9', 'info', 'org-tech'),
   A(daysAgo(3, 10, 15), 'usr-owner', 'platform.template.created', 'template', 'Global template “Kids Fun 4x6” created (Celebrations)', '103.89.20.11'),
-  A(daysAgo(3, 12, 40), 'usr-nandini', 'organisation.auth.login', 'user', 'Nandini Bose signed in (Nova Occasions)', '106.51.77.2', 'info', 'org-nova'),
+  A(daysAgo(3, 12, 40), 'usr-nandini', 'organization.auth.login', 'user', 'Nandini Bose signed in (Nova Occasions)', '106.51.77.2', 'info', 'org-nova'),
   A(daysAgo(4, 17, 25), 'usr-sana', 'ticket.resolved', 'ticket', 'Ticket “Wrong name on printed strip” resolved', '49.36.101.77', 'info', 'org-kade'),
   A(daysAgo(5, 13, 10), 'usr-owner', 'platform.user.created', 'user', 'Internal user Arjun Rao created (Support Manager)', '103.89.20.11'),
-  A(daysAgo(5, 15, 30), 'usr-arpita', 'organisation.team.created', 'user', 'Organisation Manager seat reserved (pending invite)', '117.96.11.30', 'info', 'org-pika'),
+  A(daysAgo(5, 15, 30), 'usr-arpita', 'organization.team.created', 'user', 'Organization Manager seat reserved (pending invite)', '117.96.11.30', 'info', 'org-pika'),
   A(daysAgo(6, 11, 0), 'usr-owner', 'platform.auth.failed', 'auth', 'Failed login attempt for unknown email “admin@happypix.com” (3 tries)', '45.120.148.9', 'warn'),
   A(daysAgo(8, 9, 50), 'usr-vikram', 'device.registered', 'device', 'Device registered: TechCloset iPad (Pitampura, Delhi)', '182.64.220.9', 'info', 'org-tech'),
-  A(daysAgo(8, 14, 20), 'usr-owner', 'platform.organisation.created', 'organisation', 'Organisation “Nova Occasions” created (Trial, 14 days)', '103.89.20.11'),
+  A(daysAgo(8, 14, 20), 'usr-owner', 'platform.organization.created', 'organization', 'Organization “Nova Occasions” created (Trial, 14 days)', '103.89.20.11'),
   A(daysAgo(10, 10, 30), 'usr-owner', 'platform.plan.purchased', 'subscription', 'Vishal Studio purchased Starter (3 months, ₹1,999) — invoice HAP-INV-2609-401', '103.89.20.11'),
-  A(daysAgo(10, 18, 45), 'usr-sana', 'organisation.defaults.updated', 'organisation', 'Frame prices updated (Royal Black ₹60 → ₹75, Gold Elegance ₹80 → ₹90)', '49.36.101.77', 'info', 'org-sunset'),
-  A(daysAgo(13, 12, 0), 'usr-owner', 'platform.organisation.suspended', 'organisation', 'Organisation “Riya Celebrations” suspended — repeated billing disputes', '103.89.20.11', 'warn'),
+  A(daysAgo(10, 18, 45), 'usr-sana', 'organization.defaults.updated', 'organization', 'Frame prices updated (Royal Black ₹60 → ₹75, Gold Elegance ₹80 → ₹90)', '49.36.101.77', 'info', 'org-sunset'),
+  A(daysAgo(13, 12, 0), 'usr-owner', 'platform.organization.suspended', 'organization', 'Organization “Riya Celebrations” suspended — repeated billing disputes', '103.89.20.11', 'warn'),
   A(daysAgo(14, 9, 30), 'usr-owner', 'platform.template.disabled', 'template', 'Global template “Kids Fun 4x6” disabled (layout rework)', '103.89.20.11'),
   A(daysAgo(16, 15, 10), 'usr-kade-admin-op', 'coupon.created', 'coupon', 'Coupon BIRTHDAY50 created (₹50 off, 25 uses)', '182.64.19.101', 'info', 'org-kade'),
   A(daysAgo(19, 11, 40), 'usr-owner', 'platform.plan.expiring', 'subscription', 'Pika Photography Professional plan expires in 11 days — renewal reminder queued', '103.89.20.11', 'warn'),
   A(daysAgo(20, 17, 5), 'usr-owner', 'platform.plan.purchased', 'subscription', 'Kade Events purchased Starter (3 months, ₹1,999) — invoice HAP-INV-2608-342', '103.89.20.11'),
   A(daysAgo(21, 10, 20), 'usr-rohit', 'event.paused', 'event', 'Event “Sharma Anniversary Gala” paused (venue reschedule request)', '49.36.101.77', 'info', 'org-sunset'),
   A(daysAgo(21, 16, 0), 'usr-rohit', 'event.resumed', 'event', 'Event “Sharma Anniversary Gala” resumed with new venue', '49.36.101.77', 'info', 'org-sunset'),
-  A(daysAgo(24, 13, 15), 'usr-pa', 'platform.organisation.viewed', 'organisation', 'Platform Admin viewed organisation “Alpha Booths”', '152.58.99.4', 'info'),
-  A(daysAgo(30, 9, 0), 'usr-owner', 'platform.organisation.banned', 'organisation', 'Organisation “Glow Party Co” banned — fraudulent coupon abuse', '103.89.20.11', 'danger'),
+  A(daysAgo(24, 13, 15), 'usr-pa', 'platform.organization.viewed', 'organization', 'Platform Admin viewed organization “Alpha Booths”', '152.58.99.4', 'info'),
+  A(daysAgo(30, 9, 0), 'usr-owner', 'platform.organization.banned', 'organization', 'Organization “Glow Party Co” banned — fraudulent coupon abuse', '103.89.20.11', 'danger'),
   A(daysAgo(34, 12, 30), 'usr-owner', 'platform.template.created', 'template', 'Global template “Square Grid 4” created (Corporate)', '103.89.20.11'),
   A(daysAgo(40, 15, 45), 'usr-arpita', 'device.registered', 'device', 'Device registered: Pika Corporate (Bandra, Mumbai)', '117.96.11.30', 'info', 'org-pika'),
-  A(daysAgo(42, 19, 10), 'usr-owner', 'platform.plan.expired', 'subscription', 'Alpha Booths Basic plan expired — organisation moved to expired state', '103.89.20.11', 'warn'),
+  A(daysAgo(42, 19, 10), 'usr-owner', 'platform.plan.expired', 'subscription', 'Alpha Booths Basic plan expired — organization moved to expired state', '103.89.20.11', 'warn'),
 ]
 
 // ---------------- Payments (booth print revenue per org) ----------------
@@ -469,7 +469,7 @@ function seedDb() {
     seededAt: D('2026-09-24T00:00:00+05:30'),
     templates: buildTemplates(),
     users: USERS,
-    organisations: ORGS,
+    organizations: ORGS,
     subscriptions: SUBSCRIPTIONS,
     devices: DEVICES,
     events: EVENTS,

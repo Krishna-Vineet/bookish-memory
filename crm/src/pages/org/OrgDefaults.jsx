@@ -1,7 +1,7 @@
-// Organisation Defaults — the org's single configuration surface.
+// Organization Defaults — the org's single configuration surface.
 //
 // What lives here (and nothing else):
-//   • Identity            — organisation name + logo
+//   • Identity            — organization name + logo
 //   • Payments & payouts  — the org UPI ID guests pay to, and whether money
 //                           goes straight to that UPI or to the HappyPix wallet
 //   • Booth behaviour     — idle timeout, in SECONDS
@@ -90,7 +90,7 @@ export default function OrgDefaults() {
       })
       setD(saved)
       setDirty(false)
-      toast('Organisation defaults saved')
+      toast('Organization defaults saved')
     } catch (err) {
       toast(err.message, 'error')
     } finally {
@@ -104,9 +104,9 @@ export default function OrgDefaults() {
     <div>
       <div className="page-head">
         <div>
-          <div className="page-title">Organisation Defaults</div>
+          <div className="page-title">Organization Defaults</div>
           <div className="page-sub">
-            Your organisation's single configuration surface: identity, booth idle timeout, and what guests pay for
+            Your organization's single configuration surface: identity, booth idle timeout, and what guests pay for
             every layout at your booths. Events never carry prices.
           </div>
         </div>
@@ -120,7 +120,7 @@ export default function OrgDefaults() {
       {readOnly ? (
         <div style={{ marginBottom: 14 }}>
           <WarnBanner tone="info" icon="info">
-            Read-only — layout prices, logo and booth settings can only be changed by your Organisation Admin.
+            Read-only — layout prices, logo and booth settings can only be changed by your Organization Admin.
           </WarnBanner>
         </div>
       ) : dirty ? (
@@ -153,7 +153,7 @@ export default function OrgDefaults() {
                 )}
               </div>
             </div>
-            <Field label="Organisation name" required>
+            <Field label="Organization name" required>
               <TextInput value={d.name} onChange={(e) => set('name', e.target.value)} disabled={readOnly} style={disabledInput} />
             </Field>
           </div>
@@ -169,7 +169,7 @@ export default function OrgDefaults() {
           <div style={{ padding: '18px 20px' }}>
             <div className="row gap-16" style={{ alignItems: 'flex-start', flexWrap: 'wrap' }}>
               <div style={{ flex: 1, minWidth: 220 }}>
-                <Field label="Organisation UPI ID" hint="Guests scan this UPI QR at the booth. Wallet withdrawals are also paid to this ID.">
+                <Field label="Organization UPI ID" hint="Guests scan this UPI QR at the booth. Wallet withdrawals are also paid to this ID.">
                   <TextInput
                     value={d.upiId || ''}
                     onChange={(e) => set('upiId', e.target.value.trim())}

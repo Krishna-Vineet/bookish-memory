@@ -24,16 +24,16 @@ export default function OrgDashboard() {
   if (error) return <div className="empty"><div className="empty-ico"><Icon name="alert" size={24} /></div><h3>Could not load dashboard</h3><p>{error}</p></div>
   if (!data) return <PageLoader />
 
-  const { plan, usage, devices, events, tickets, warnings, revenue, organisation } = data
+  const { plan, usage, devices, events, tickets, warnings, revenue, organization } = data
 
   return (
     <div>
       <div className="page-head">
         <div>
-          <div className="page-title">{organisation.name}</div>
+          <div className="page-title">{organization.name}</div>
           <div className="page-sub">
             {isAdmin
-              ? 'Your organisation at a glance — plan, booths, events and guest support.'
+              ? 'Your organization at a glance — plan, booths, events and guest support.'
               : 'Operations view — events, devices and guest support.'}
           </div>
         </div>
