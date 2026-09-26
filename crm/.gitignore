@@ -1,0 +1,13 @@
+node_modules
+dist/
+# local env overrides (never commit real values)
+.env
+.env.local
+.env.*.local
+
+# local handoff artifacts
+*.zip
+*.patch
+restore-happypix.sh
+restore-parts/
+restore-parts/
