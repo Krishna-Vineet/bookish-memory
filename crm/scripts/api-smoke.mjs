@@ -2,9 +2,9 @@
 // Run: node scripts/api-smoke.mjs
 //
 // Covers the redefined surfaces:
-//   • Event create/update — General/Customisation/Branding, NO price, NO passkey;
-//     branding.logos = sponsor/host/venue logos (0–15, optional)
-//   • Organization Defaults — idle timeout in SECONDS + layoutPrices
+//   • Event create/update — General/Customisation/Branding + event-specific
+//     layout-price snapshots/overrides, with NO passkey
+//   • Organization Defaults — idle timeout in SECONDS + default layoutPrices
 //     (per layout iteration: family × image-slot count)
 //   • Templates — platform Template Library: 17 seeds (14 designer + 2 AI +
 //     1 playground), layout-anchored CRUD + AI draft + publish gating
@@ -42,6 +42,7 @@ async function login(email) {
 // ---------------- Auth ----------------
 const owner = await login('owner@happypix.com')
 const pa = await login('priya@happypix.com')
+const supportManager = await login('support@happypix.com')
 const sana = await login('sana@sunsetweddings.com')
 const rohit = await login('rohit@sunsetweddings.com')
 
@@ -107,12 +108,14 @@ r = call('POST', '/api/org/events', {
   name: 'Smoke Wedding', clientName: 'A & B', location: 'Delhi',
   startDate: start, endDate: end, digitalCopy: true,
   filters: ['warm', 'bw'], templateIds: ['hp-classic-46v1', 'hp-sunset-4626v3'],
+  layoutPrices: { '46:1': 321, '46-26:3': 111 },
   branding: { logos: ['data:image/svg+xml;utf8,%3Csvg%20xmlns=%22http://www.w3.org/2000/svg%22/%3E', 'data:image/png;base64,iVBORw0KGgo='], tagline: 'Smoke tagline' },
 }, sana)
 check('POST event (new shape) → 201', r.status === 201)
 const ev = r.data?.event
 check('event has no price, no passkey', !!ev && ev.printPrice === undefined && ev.passkey === undefined && ev.frameIds === undefined)
 check('event echoes branding logos + digitalCopy', !!ev && ev.digitalCopy === true && ev.branding?.tagline === 'Smoke tagline' && ev.branding?.logos?.length === 2 && ev.filters.length === 2)
+check('event saves full effective pricing with creation overrides', !!ev && Object.keys(ev.layoutPrices || {}).length >= 38 && ev.layoutPrices['46:1'] === 321 && ev.layoutPrices['46-26:3'] === 111)
 const smokeEventId = ev?.id
 
 check('POST event unknown filter → 400', call('POST', '/api/org/events', { name: 'X', startDate: start, endDate: end, filters: ['sparkly'] }, sana).status === 400)
@@ -121,8 +124,10 @@ check('POST event end before start → 400', call('POST', '/api/org/events', { n
 check('POST event with 16 logos → 400', call('POST', '/api/org/events', { name: 'X', startDate: start, endDate: end, branding: { logos: Array.from({ length: 16 }, (_, i) => `logo-${i}`) } }, sana).status === 400)
 check('POST event by org manager → 201 (can create)', call('POST', '/api/org/events', { name: 'Manager Event', startDate: start, endDate: end }, rohit).status === 201)
 
-r = call('PUT', `/api/org/events/${smokeEventId}`, { digitalCopy: false, filters: ['warm'], branding: { logos: ['solo'], tagline: 'New tagline' } }, sana)
+r = call('PUT', `/api/org/events/${smokeEventId}`, { digitalCopy: false, filters: ['warm'], layoutPrices: { '46:1': 299 }, branding: { logos: ['solo'], tagline: 'New tagline' } }, sana)
 check('PUT event → 200 with updates', r.status === 200 && r.data?.event?.digitalCopy === false && r.data?.event?.branding?.tagline === 'New tagline' && r.data?.event?.branding?.logos?.length === 1 && r.data?.event?.filters.length === 1)
+check('PUT event saves price override without losing its snapshot', r.data?.event?.layoutPrices?.['46:1'] === 299 && r.data?.event?.layoutPrices?.['46-26:3'] === 111)
+check('PUT event unknown price key → 400', call('PUT', `/api/org/events/${smokeEventId}`, { layoutPrices: { 'bad:2': 10 } }, sana).status === 400)
 
 check('DELETE active event → 409', call('DELETE', `/api/org/events/${smokeEventId}`, null, sana).status === 409)
 check('pause event → 200', call('POST', `/api/org/events/${smokeEventId}/pause`, {}, sana).status === 200)
@@ -287,6 +292,51 @@ check('booth ticket payment gets settlement stamped from org mode', (() => {
   const pay = t.data?.session?.payment || t.data?.ticket?.session?.payment
   return t.status === 201 && pay?.settlement === 'wallet'
 })())
+
+// ---- Round 6: protected platform identities, plans, and org↔platform support ----
+r = call('GET', '/api/platform/users', null, owner)
+check('Owner can list internal team', r.status === 200 && r.data.users.some((u) => u.id === 'usr-pa'))
+check('Owner cannot edit a team member name/email', call('PUT', '/api/platform/users/usr-pa', { name: 'Changed', email: 'changed@happypix.com' }, owner).status === 403)
+check('Owner can deactivate team member', call('PUT', '/api/platform/users/usr-pa', { status: 'inactive' }, owner).data?.user?.status === 'inactive')
+check('Owner can re-activate team member', call('PUT', '/api/platform/users/usr-pa', { status: 'active' }, owner).data?.user?.status === 'active')
+const pa2 = await login('priya@happypix.com')
+check('Owner cannot deactivate self', call('PUT', '/api/platform/users/usr-owner', { status: 'inactive' }, owner).status === 400)
+
+r = call('GET', '/api/platform/plans', null, owner)
+check('Owner sees all subscription plans', r.status === 200 && r.data.plans.length >= 6 && r.data.plans.some((p) => p.key === 'business'))
+check('Platform Admin cannot manage plans', call('GET', '/api/platform/plans', null, pa2).status === 403)
+r = call('POST', '/api/platform/plans', { key: 'growth-plus', name: 'Growth Plus', description: 'Smoke plan', price: 14999, durationMonths: 12, durationLabel: '12 months', devices: 20, events: 15, active: true }, owner)
+const growthPlanId = r.data?.plan?.id
+check('Owner adds subscription plan', r.status === 201 && r.data?.plan?.key === 'growth-plus')
+r = call('PUT', `/api/platform/plans/${growthPlanId}`, { name: 'Growth Plus 2', price: 15999, devices: 22 }, owner)
+check('Owner edits subscription plan', r.status === 200 && r.data?.plan?.name === 'Growth Plus 2' && r.data?.plan?.price === 15999 && r.data?.plan?.devices === 22)
+check('Plan key is immutable', call('PUT', `/api/platform/plans/${growthPlanId}`, { key: 'different' }, owner).status === 400)
+
+check('all platform roles can view organization support', call('GET', '/api/platform/support', null, owner).status === 200 && call('GET', '/api/platform/support', null, pa2).status === 200 && call('GET', '/api/platform/support', null, supportManager).status === 200)
+check('all organization roles can view platform support', call('GET', '/api/org/platform-support', null, sana).status === 200 && call('GET', '/api/org/platform-support', null, rohit2).status === 200)
+const tinyImage = 'data:image/png;base64,iVBORw0KGgo='
+r = call('POST', '/api/org/platform-support', { subject: 'Smoke platform help', category: 'technical', priority: 'urgent', message: 'Please inspect this screenshot and help us.', images: [tinyImage] }, rohit2)
+const supportId = r.data?.request?.id
+check('Organization Manager raises support request with image', r.status === 201 && r.data?.request?.status === 'new' && r.data?.request?.messages?.[0]?.images?.length === 1)
+check('Organization cannot chat before request acceptance', call('POST', `/api/org/platform-support/${supportId}/reply`, { message: 'extra' }, sana).status === 409)
+check('Platform denial requires visible reason', call('POST', `/api/platform/support/${supportId}/deny`, { reason: '' }, pa2).status === 400)
+r = call('POST', `/api/platform/support/${supportId}/deny`, { reason: 'Please include the affected booth UUID before we create a ticket.' }, pa2)
+check('Platform can deny request with reason', r.status === 200 && r.data?.request?.status === 'denied' && r.data?.request?.decision?.reason.includes('booth UUID'))
+check('Organization sees platform denial reason', call('GET', `/api/org/platform-support/${supportId}`, null, sana).data?.request?.decision?.reason.includes('booth UUID'))
+check('Denied request re-apply requires text', call('POST', `/api/org/platform-support/${supportId}/reapply`, { message: '' }, sana).status === 400)
+r = call('POST', `/api/org/platform-support/${supportId}/reapply`, { message: 'Affected booth UUID is f47ac10b-58cc-4372-a567-0e02b2c3d471.' }, sana)
+check('Organization can re-apply denied request', r.status === 200 && r.data?.request?.status === 'new' && r.data?.request?.reapplyCount === 1)
+r = call('POST', `/api/platform/support/${supportId}/accept`, { message: 'Accepted after receiving the booth UUID.' }, owner)
+check('Platform accepts request and creates ticket number', r.status === 200 && r.data?.request?.status === 'open' && /^HPX-\d{4}-\d{4}$/.test(r.data?.request?.ticketNo || ''))
+r = call('POST', `/api/org/platform-support/${supportId}/reply`, { message: 'Here is another screenshot.', images: [tinyImage] }, rohit2)
+check('Organization and platform share image-enabled chat', r.status === 200 && r.data?.request?.status === 'in_progress' && r.data?.request?.messages?.at(-1)?.images?.length === 1)
+check('Organization cannot resolve via platform API', call('POST', `/api/platform/support/${supportId}/resolve`, { resolution: 'not allowed' }, sana).status === 403)
+r = call('POST', `/api/platform/support/${supportId}/resolve`, { resolution: 'Sync cursor reset and both booths confirmed updated.' }, supportManager)
+check('Platform resolves ticket with decision', r.status === 200 && r.data?.request?.status === 'resolved' && r.data?.request?.resolution.includes('Sync cursor'))
+check('Organization cannot reopen or reply to resolved ticket', call('POST', `/api/org/platform-support/${supportId}/reapply`, { message: 'reopen' }, sana).status === 409 && call('POST', `/api/org/platform-support/${supportId}/reply`, { message: 'reopen' }, sana).status === 409)
+r = call('POST', `/api/platform/support/${supportId}/reopen`, { message: 'Reopening for a final device verification.' }, pa2)
+check('Only platform can reopen resolved ticket', r.status === 200 && r.data?.request?.status === 'in_progress')
+check('Organization chat resumes after platform reopens', call('POST', `/api/org/platform-support/${supportId}/reply`, { message: 'Both devices verified.' }, sana).status === 200)
 
 console.log('\n' + results.join('\n'))
 console.log(`\n${pass} passed, ${fail} failed`)

@@ -131,7 +131,7 @@ Orgs price each frame and switch booth availability in `OrganizationDefaults`.
   `{ frameId, price: <defaultPrice>, allowed: false }`) so newly added frames show up
   without the org re-saving, and removed frames never surface.
 
-### `Event` (new/changed shape — no price, no passkey)
+### `Event` (new/changed shape — per-layout event price snapshot, no passkey)
 ```json
 {
   "id": "ObjectId",
@@ -145,13 +145,16 @@ Orgs price each frame and switch booth availability in `OrganizationDefaults`.
   "filters": ["warm", "bw", "vintage"],      // ⊆ the 8 photo filters (original, warm, cool,
                                              //   bw, vintage, neon, soft, party)
   "digitalCopy": true,                        // guests may receive a digital copy
+  "layoutPrices": { "46:1": 80, "57:3": 120 }, // full effective event snapshot
   "branding": { "logoUrl": "https://cdn/... | null", "tagline": "Shubh Vivah" },
   "shortCode": "KAPWED",
   "createdAt": "ISO"
 }
 ```
-- **The event has NO `passkey`, NO `printPrice`, NO `frameIds`** — booth guest access is a
-  booth-app concern, and pricing lives exclusively in `OrganizationDefaults` per frame.
+- **The event has NO `passkey`, NO scalar `printPrice`, and NO `frameIds`** — booth guest
+  access is a booth-app concern. `layoutPrices` is copied from Organization Defaults when
+  the event is created, overlaid with event-specific overrides, validated server-side, and
+  stored in full so later default changes do not silently reprice the event.
 - `branding.logoUrl` defaults to `null` (none); when set it renders in the 15% footer of
   every print alongside `branding.tagline`.
 
@@ -263,8 +266,9 @@ Auth — profile
 - `GET /api/platform/users` (OWNER) → `{ users: [{ id, name, email, role, status, lastLoginAt, createdAt }] }`
 - `POST /api/platform/users` (OWNER) body `{ name, email, password, role: PLATFORM_ADMIN|SUPPORT_MANAGER }`
   → 201 `{ user }` (400 if role is Owner or org role; 409 on duplicate email)
-- `PUT /api/platform/users/:id` body `{ name?, email?, status? }` (OWNER) → `{ user }`
-- `POST /api/platform/users/:id/reset-password` (OWNER) → `{ tempPassword }`
+- `PUT /api/platform/users/:id` body `{ status: "active"|"inactive" }` (OWNER) → `{ user }`.
+  Any `name`, `email`, `role` or password field is rejected with 403; identity is self-managed.
+- Password reset is self-service; there is no platform reset-password endpoint.
 
 - `GET /api/platform/templates` (OWNER/PA manage; org roles read via `GLOBAL_TEMPLATES_USE`
   so the event editor can list them) → `{ templates: [...] }`
@@ -313,17 +317,20 @@ Auth — profile
 
 - `GET /api/org/events?search=&status=`
   → `{ events: [{ id, name, clientName, location, startDate, endDate, status,
-                  templateIds, filters, digitalCopy, branding, assignedDevices: [{ id, name, online }],
+                  templateIds, filters, digitalCopy, layoutPrices, branding, assignedDevices: [{ id, name, online }],
                   deviceCount }], canCreate }`
-- `POST /api/org/events` (both org roles) — **General + Customisation + Branding, no price**:
+- `POST /api/org/events` (both org roles) — **General + Customisation + event pricing + Branding**:
   body `{ name, clientName?, location?, startDate, endDate,
           digitalCopy?, filters?: string[], templateIds?: string[],
+          layoutPrices?: Record<"familyId:slots", number>,
           branding?: { logoUrl?: string|null, tagline?: string } }`
   → 201 `{ event }`
   **Server checks (in order)**: required fields · end > start · org not suspended/banned ·
   plan not expired/not_subscribed · `activeCount < plan.eventLimit` (active = between start
   and end and not paused; finished never counts) · every `templateId` exists and is active ·
-  every `filter` ∈ the 8-filter catalogue. `shortCode` is auto-derived from the name.
+  every `filter` ∈ the 8-filter catalogue · every `layoutPrices` key resolves to a catalogue
+  family/slot iteration and every value is ₹0–₹100000. The server merges defaults + overrides
+  into a full saved snapshot. `shortCode` is auto-derived from the name.
 - `PUT /api/org/events/:id` — same body/validations as create (partial allowed);
   branding/tagline can be edited at any time
 - `POST /api/org/events/:id/pause` / `POST /api/org/events/:id/resume` → 200
@@ -385,8 +392,8 @@ Auth — profile
 5. **Razorpay keys/verification** for `Subscription` stay server-side; the CRM never sees raw
    gateway payloads — it only reads `Subscription` records (per the v2 contract above).
 6. **Coupon redemption** is a single atomic transaction (validate + `$inc`) — P0 SEC-07.
-   The print cost the booth shows is always `OrganizationDefaults.frames[].price` for the
-   chosen frame (minus coupon) — events carry no price of their own.
+   The print cost shown by a booth comes from the assigned event's validated `layoutPrices`
+   snapshot (minus any server-computed coupon); Organization Defaults supplies its baseline.
 
 ---
 
@@ -543,9 +550,8 @@ layoutPrices: { "46:1": 30, "46:4": 40, "57:1": 70, "57:3": 90, ... }
   `LAYOUT_FAMILIES` (family exists + slot count offered) and each price must
   be a finite number 0–100000 (400 otherwise). Unmentioned keys keep their
   current values.
-- An iteration **without a price is not offered at the org's booths** —
-  clearing the input hides the layout from guests. Prices never live on
-  events.
+- Organization Defaults is the baseline. Event creation copies the full effective map and
+  allows overrides for that event; booth pricing uses the assigned event's saved map.
 
 ### 5.6 Event branding — sponsor/host/venue logos (0–15, optional)
 
@@ -620,3 +626,109 @@ See `.env.example`. `VITE_MOCK=false` builds contain no mock code; `VITE_API_URL
 **Revenue** (`GET /org/revenue`) gains `payout`, `wallet`, `settlement: { upi, wallet }` (paid only), `monthSplit[]` (per-month upi/wallet), and `matrix[]` — one row per **event × device** with `{ eventId, eventName, deviceId, deviceName, total, prints, transactions, viaUpi, viaWallet }` (`eventId` null = walk-in). Org dashboard `revenue` gains `payout`, `wallet { balance, processing, minWithdrawal }`, `viaUpi`, `viaWallet`.
 
 New seed shape → `DB_VERSION = 7`.
+
+## v2.4 — plan catalogue, platform support, protected team identity, event pricing
+
+This section supersedes older pricing/team statements above where they conflict.
+
+### Owner-managed `SubscriptionPlan`
+
+```json
+{
+  "id": "ObjectId",
+  "key": "business",
+  "name": "Business",
+  "description": "Higher limits for multi-city operators.",
+  "price": 9999,
+  "durationMonths": 6,
+  "durationLabel": "6 months",
+  "devices": 10,
+  "events": 10,
+  "active": true,
+  "createdAt": "ISO",
+  "updatedAt": "ISO"
+}
+```
+
+`key` is unique and immutable because organization/subscription records reference it. Hiding a
+plan does not invalidate current subscribers. Plan limit reads must use this collection, not a
+client constant.
+
+- `GET /api/platform/plans` (OWNER) → `{ plans: [...with organizations, subscriptions] }`
+- `POST /api/platform/plans` (OWNER) → 201 `{ plan }`
+- `PUT /api/platform/plans/:id` (OWNER) → `{ plan }`; changing `key` → 400
+
+### `PlatformSupportRequest`
+
+```json
+{
+  "id": "ObjectId",
+  "ticketNo": "HPX-2609-0003 | null",
+  "organizationId": "ObjectId",
+  "createdBy": "userId",
+  "subject": "string",
+  "category": "technical | billing | account | feature | other",
+  "priority": "low | medium | high | urgent",
+  "status": "new | denied | open | in_progress | resolved",
+  "decision": { "type": "accepted | denied", "reason": "string | null", "by": "userId", "at": "ISO" },
+  "messages": [{
+    "id": "ObjectId", "authorId": "userId", "authorName": "string",
+    "authorRole": "string", "side": "org | platform", "at": "ISO",
+    "text": "string", "images": ["https://cdn/... or data:image in demo"]
+  }],
+  "reapplyCount": 0,
+  "resolution": "string | null",
+  "acceptedAt": "ISO | null",
+  "resolvedAt": "ISO | null",
+  "createdAt": "ISO",
+  "updatedAt": "ISO"
+}
+```
+
+Production should upload images to object storage using signed URLs and persist only media URLs;
+the mock accepts bounded `data:image/*` values. Limit each message to four validated images.
+
+All platform roles may use the platform side; both organization roles may use their own tenant's
+organization side.
+
+Platform routes:
+- `GET /api/platform/support?status=&search=` / `GET /api/platform/support/:id`
+- `POST /api/platform/support/:id/accept { message? }` — `new → open`, atomically allocates
+  the unique human ticket number
+- `POST /api/platform/support/:id/deny { reason }` — reason required and org-visible
+- `POST /api/platform/support/:id/reply { message?, images? }` — active tickets only
+- `POST /api/platform/support/:id/resolve { resolution }` — platform only, note required
+- `POST /api/platform/support/:id/reopen { message? }` — platform only, `resolved → in_progress`
+
+Organization routes (always tenant-scoped):
+- `GET /api/org/platform-support` / `GET /api/org/platform-support/:id`
+- `POST /api/org/platform-support { subject, category, priority, message, images? }`
+- `POST /api/org/platform-support/:id/reapply { message }` — denied only, text required,
+  returns to `new` review state
+- `POST /api/org/platform-support/:id/reply { message?, images? }` — accepted active tickets only
+
+Organization routes intentionally have no resolve or reopen operation. A resolved ticket is
+read-only until platform staff reopens it.
+
+### Platform team identity protection
+
+`PUT /api/platform/users/:id` accepts exactly `{ status: "active"|"inactive" }`. Owner attempts
+to modify `name`, `email`, `role` or password are rejected. A member edits their own name/email
+through authenticated self-service profile/email verification flows. Self-deactivation remains
+blocked and deactivation revokes sessions.
+
+### Event layout-price snapshot
+
+`POST /api/org/events` and partial `PUT /api/org/events/:id` accept `layoutPrices`. On create:
+
+1. Load the full server-suggested map.
+2. Overlay the organization's saved default map.
+3. Overlay the request's event overrides.
+4. Validate every `familyId:slots` key and ₹0–₹100000 value.
+5. Save the resulting full map on the event in the same transaction.
+
+The booth must charge from the assigned event snapshot, never from a client-computed value. Event
+updates retain unmentioned snapshot entries. Coupons remain server-computed after selecting the
+event layout price.
+
+New mock seed shape → `DB_VERSION = 8`.

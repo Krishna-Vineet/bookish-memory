@@ -10,7 +10,7 @@
 
 import { getDb, persist } from './db.js'
 import {
-  ROLES, PERMS, roleHasPermission, isOrgRole, isPlatformRole,
+  ROLES, ROLE_LABELS, PERMS, roleHasPermission, isOrgRole, isPlatformRole,
 } from '../../lib/roles.js'
 import { PLANS, DEVICE_ONLINE_WINDOW_MS, FILTERS } from '../../lib/plans.js'
 import { LAYOUT_FAMILIES, LAYOUT_BY_ID, layoutById, layoutLabel, suggestedPriceMap } from '../../lib/layouts.js'
@@ -153,8 +153,12 @@ export function computeDeviceOnline(dev) {
   return NOW() - new Date(dev.lastSeenAt) < DEVICE_ONLINE_WINDOW_MS
 }
 
+function catalogPlan(key, db = getDb()) {
+  return (db.planCatalog || []).find((p) => p.key === key) || PLANS[key] || PLANS.trial
+}
+
 export function orgLimits(org) {
-  return PLANS[org.plan] || PLANS.trial
+  return catalogPlan(org.plan)
 }
 
 export function planSummary(org, subs) {
@@ -163,17 +167,18 @@ export function planSummary(org, subs) {
   const end = sub ? new Date(sub.extendedTo || sub.endDate) : null
   const start = sub ? new Date(sub.startDate) : null
   const daysLeft = end ? Math.max(0, Math.ceil((end - NOW()) / 86400000)) : null
+  const plan = catalogPlan(org.plan)
   return {
     plan: org.plan,
-    planName: PLANS[org.plan]?.name || org.plan,
+    planName: plan.name || org.plan,
     status,
     startDate: start ? start.toISOString() : null,
     endDate: end ? end.toISOString() : null,
     daysLeft,
     amount: sub ? sub.amount : 0,
     invoice: sub ? sub.invoice || null : null,
-    deviceLimit: orgLimits(org).devices,
-    eventLimit: orgLimits(org).events,
+    deviceLimit: plan.devices,
+    eventLimit: plan.events,
   }
 }
 
@@ -206,6 +211,73 @@ function paginated(items, { page = 1, limit = 10 } = {}) {
 
 function uid(prefix) {
   return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`
+}
+
+const SUPPORT_STATUSES = ['new', 'denied', 'open', 'in_progress', 'resolved']
+const SUPPORT_CATEGORIES = ['technical', 'billing', 'account', 'feature', 'other']
+const SUPPORT_PRIORITIES = ['low', 'medium', 'high', 'urgent']
+
+function supportImages(raw) {
+  if (raw == null) return []
+  if (!Array.isArray(raw) || raw.length > 4) throw new ApiError(400, 'Attach up to 4 images per message.')
+  return raw.map((src) => {
+    const safe = safeMediaUrl(src)
+    if (!safe) throw new ApiError(400, 'Attachments must be valid https:// or data:image/ images.')
+    return safe
+  })
+}
+
+function supportMessage(db, ticket, user, side, body, { requireText = false } = {}) {
+  const text = safeStr(body && body.message, 2000)
+  const images = supportImages(body && body.images)
+  if ((!text && images.length === 0) || (requireText && !text)) {
+    throw new ApiError(400, requireText ? 'A text message is required.' : 'Write a message or attach an image.')
+  }
+  const message = {
+    id: uid('sm'), authorId: user.id, authorName: user.name,
+    authorRole: ROLE_LABELS[user.role], side, at: NOW().toISOString(), text, images,
+  }
+  ticket.messages.push(message)
+  ticket.updatedAt = message.at
+  return message
+}
+
+function supportView(db, ticket) {
+  const org = db.organizations.find((o) => o.id === ticket.organizationId)
+  const creator = db.users.find((u) => u.id === ticket.createdBy)
+  const decisionBy = ticket.decision && db.users.find((u) => u.id === ticket.decision.by)
+  return {
+    ...ticket,
+    organization: org ? { id: org.id, name: org.name, email: org.email } : null,
+    creator: creator ? { id: creator.id, name: creator.name, role: creator.role } : null,
+    decision: ticket.decision ? {
+      ...ticket.decision,
+      byName: decisionBy ? decisionBy.name : 'HappyPix platform',
+      byRole: decisionBy ? ROLE_LABELS[decisionBy.role] : null,
+    } : null,
+  }
+}
+
+function supportCounts(rows) {
+  const counts = Object.fromEntries(SUPPORT_STATUSES.map((s) => [s, 0]))
+  rows.forEach((row) => { if (counts[row.status] != null) counts[row.status] += 1 })
+  return counts
+}
+
+function validateLayoutPrices(raw, base = {}) {
+  if (raw == null) return { ...base }
+  if (typeof raw !== 'object' || Array.isArray(raw)) throw new ApiError(400, 'layoutPrices must be an object of "familyId:slots" → price.')
+  const prices = { ...base }
+  for (const [key, value] of Object.entries(raw)) {
+    const [familyId, slotsText] = String(key).split(':')
+    const family = LAYOUT_FAMILIES.find((f) => f.id === familyId)
+    const slots = Number(slotsText)
+    if (!family || !family.slots.includes(slots)) throw new ApiError(400, `Unknown layout iteration "${key}".`)
+    const price = Number(value)
+    if (!Number.isFinite(price) || price < 0 || price > 100000) throw new ApiError(400, `Price for "${key}" must be between 0 and 100000.`)
+    prices[key] = Math.round(price)
+  }
+  return prices
 }
 
 function logAudit(db, { at, actorId, action, entity, summary, ip, organizationId, severity = 'info' }) {
@@ -739,6 +811,153 @@ export function handle(method, path, body, token) {
       }
     }
 
+    if (p2 === 'plans') {
+      authed(PERMS.SUBSCRIPTION_PLANS_MANAGE)
+      if (!p3 && method === 'GET') {
+        const plans = (db.planCatalog || []).map((plan) => ({
+          ...plan,
+          organizations: db.organizations.filter((org) => org.plan === plan.key).length,
+          subscriptions: db.subscriptions.filter((sub) => sub.plan === plan.key).length,
+        }))
+        return { status: 200, data: { plans } }
+      }
+      if (!p3 && method === 'POST') {
+        const name = safeStr(body && body.name, 80)
+        const key = safeStr(body && body.key, 50).toLowerCase().replace(/[^a-z0-9-]/g, '-')
+        const description = safeStr(body && body.description, 240)
+        const price = body && (body.price === null || body.price === '') ? null : Number(body && body.price)
+        const devices = Number(body && body.devices)
+        const events = Number(body && body.events)
+        const durationMonths = Number(body && body.durationMonths)
+        const durationLabel = safeStr(body && body.durationLabel, 60)
+        if (!name || !key) throw new ApiError(400, 'Plan name and key are required.')
+        if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(key)) throw new ApiError(400, 'Plan key may contain lowercase letters, numbers and single hyphens.')
+        if ((db.planCatalog || []).some((plan) => plan.key === key)) throw new ApiError(409, 'A plan with this key already exists.')
+        if (price !== null && (!Number.isFinite(price) || price < 0 || price > 10000000)) throw new ApiError(400, 'Price must be between ₹0 and ₹1,00,00,000, or blank for contact sales.')
+        if (!Number.isInteger(devices) || devices < 1 || devices > 1000 || !Number.isInteger(events) || events < 1 || events > 1000) throw new ApiError(400, 'Device and event limits must be whole numbers from 1 to 1000.')
+        if (!Number.isInteger(durationMonths) || durationMonths < 0 || durationMonths > 120) throw new ApiError(400, 'Duration must be from 0 to 120 months.')
+        const plan = {
+          id: uid('plan'), key, name, description, price,
+          durationMonths, durationLabel: durationLabel || (durationMonths ? `${durationMonths} month${durationMonths === 1 ? '' : 's'}` : 'Custom term'),
+          devices, events, active: body.active !== false,
+          createdAt: NOW().toISOString(), updatedAt: NOW().toISOString(),
+        }
+        db.planCatalog.push(plan)
+        logAudit(db, { actorId: user.id, action: 'platform.plan.created', entity: 'subscription_plan', summary: `Subscription plan “${name}” created` })
+        persist()
+        return { status: 201, data: { plan } }
+      }
+      if (p3 && method === 'PUT') {
+        const plan = (db.planCatalog || []).find((row) => row.id === p3)
+        if (!plan) throw new ApiError(404, 'Subscription plan not found.')
+        if (body.key !== undefined && body.key !== plan.key) throw new ApiError(400, 'A plan key is permanent once created.')
+        if (body.name !== undefined) {
+          const name = safeStr(body.name, 80)
+          if (!name) throw new ApiError(400, 'Plan name is required.')
+          plan.name = name
+        }
+        if (body.description !== undefined) plan.description = safeStr(body.description, 240)
+        if (body.price !== undefined) {
+          const price = body.price === null || body.price === '' ? null : Number(body.price)
+          if (price !== null && (!Number.isFinite(price) || price < 0 || price > 10000000)) throw new ApiError(400, 'Price must be between ₹0 and ₹1,00,00,000, or blank for contact sales.')
+          plan.price = price
+        }
+        for (const field of ['devices', 'events']) {
+          if (body[field] !== undefined) {
+            const value = Number(body[field])
+            if (!Number.isInteger(value) || value < 1 || value > 1000) throw new ApiError(400, `${field} must be a whole number from 1 to 1000.`)
+            plan[field] = value
+          }
+        }
+        if (body.durationMonths !== undefined) {
+          const value = Number(body.durationMonths)
+          if (!Number.isInteger(value) || value < 0 || value > 120) throw new ApiError(400, 'Duration must be from 0 to 120 months.')
+          plan.durationMonths = value
+        }
+        if (body.durationLabel !== undefined) plan.durationLabel = safeStr(body.durationLabel, 60) || plan.durationLabel
+        if (body.active !== undefined) plan.active = !!body.active
+        plan.updatedAt = NOW().toISOString()
+        logAudit(db, { actorId: user.id, action: 'platform.plan.updated', entity: 'subscription_plan', summary: `Subscription plan “${plan.name}” updated` })
+        persist()
+        return { status: 200, data: { plan } }
+      }
+    }
+
+    if (p2 === 'support') {
+      authed(PERMS.PLATFORM_SUPPORT_VIEW)
+      if (!p3 && method === 'GET') {
+        const q = url.searchParams
+        let rows = (db.platformSupport || []).slice()
+        if (q.get('status')) rows = rows.filter((ticket) => ticket.status === q.get('status'))
+        if (q.get('search')) {
+          const search = q.get('search').toLowerCase()
+          rows = rows.filter((ticket) => {
+            const org = db.organizations.find((o) => o.id === ticket.organizationId)
+            return ticket.subject.toLowerCase().includes(search) || (ticket.ticketNo || '').toLowerCase().includes(search) || (org && org.name.toLowerCase().includes(search))
+          })
+        }
+        rows.sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt))
+        return { status: 200, data: { requests: rows.map((ticket) => supportView(db, ticket)), counts: supportCounts(db.platformSupport || []) } }
+      }
+      const ticket = p3 && (db.platformSupport || []).find((row) => row.id === p3)
+      if (p3 && !ticket) throw new ApiError(404, 'Support request not found.')
+      if (p3 && !parts[3] && method === 'GET') return { status: 200, data: { request: supportView(db, ticket) } }
+      if (p3 && parts[3] === 'accept' && method === 'POST') {
+        if (ticket.status !== 'new') throw new ApiError(409, 'Only a new request can be accepted.')
+        db.supportTicketSeq = Number(db.supportTicketSeq || 0) + 1
+        ticket.ticketNo = `HPX-${String(NOW().getFullYear()).slice(2)}${String(NOW().getMonth() + 1).padStart(2, '0')}-${String(db.supportTicketSeq).padStart(4, '0')}`
+        ticket.status = 'open'
+        ticket.acceptedAt = NOW().toISOString()
+        ticket.decision = { type: 'accepted', reason: null, by: user.id, at: ticket.acceptedAt }
+        const message = safeStr(body && body.message, 2000) || `Request accepted as ${ticket.ticketNo}. HappyPix support will continue here.`
+        supportMessage(db, ticket, user, 'platform', { message })
+        logAudit(db, { actorId: user.id, action: 'platform.support.accepted', entity: 'support_ticket', summary: `Accepted “${ticket.subject}” as ${ticket.ticketNo}`, organizationId: ticket.organizationId })
+        persist()
+        return { status: 200, data: { request: supportView(db, ticket) } }
+      }
+      if (p3 && parts[3] === 'deny' && method === 'POST') {
+        if (ticket.status !== 'new') throw new ApiError(409, 'Only a new request can be denied.')
+        const reason = safeStr(body && body.reason, 2000)
+        if (!reason) throw new ApiError(400, 'A denial reason is required and will be shown to the organization.')
+        ticket.status = 'denied'
+        ticket.ticketNo = null
+        ticket.decision = { type: 'denied', reason, by: user.id, at: NOW().toISOString() }
+        ticket.updatedAt = ticket.decision.at
+        logAudit(db, { actorId: user.id, action: 'platform.support.denied', entity: 'support_request', summary: `Denied support request “${ticket.subject}” — ${reason}`, organizationId: ticket.organizationId, severity: 'warn' })
+        persist()
+        return { status: 200, data: { request: supportView(db, ticket) } }
+      }
+      if (p3 && parts[3] === 'reply' && method === 'POST') {
+        if (!['open', 'in_progress'].includes(ticket.status)) throw new ApiError(409, 'Messages can only be sent on an active ticket.')
+        supportMessage(db, ticket, user, 'platform', body || {})
+        ticket.status = 'in_progress'
+        persist()
+        return { status: 200, data: { request: supportView(db, ticket) } }
+      }
+      if (p3 && parts[3] === 'resolve' && method === 'POST') {
+        if (!['open', 'in_progress'].includes(ticket.status)) throw new ApiError(409, 'Only an active ticket can be resolved.')
+        const resolution = safeStr(body && body.resolution, 2000)
+        if (!resolution) throw new ApiError(400, 'Add a resolution note for the organization.')
+        ticket.status = 'resolved'
+        ticket.resolution = resolution
+        ticket.resolvedAt = NOW().toISOString()
+        supportMessage(db, ticket, user, 'platform', { message: resolution }, { requireText: true })
+        logAudit(db, { actorId: user.id, action: 'platform.support.resolved', entity: 'support_ticket', summary: `${ticket.ticketNo} resolved`, organizationId: ticket.organizationId })
+        persist()
+        return { status: 200, data: { request: supportView(db, ticket) } }
+      }
+      if (p3 && parts[3] === 'reopen' && method === 'POST') {
+        if (ticket.status !== 'resolved') throw new ApiError(409, 'Only a resolved ticket can be reopened.')
+        ticket.status = 'in_progress'
+        ticket.resolvedAt = null
+        const message = safeStr(body && body.message, 2000) || `Ticket ${ticket.ticketNo} was reopened by HappyPix.`
+        supportMessage(db, ticket, user, 'platform', { message })
+        logAudit(db, { actorId: user.id, action: 'platform.support.reopened', entity: 'support_ticket', summary: `${ticket.ticketNo} reopened`, organizationId: ticket.organizationId, severity: 'warn' })
+        persist()
+        return { status: 200, data: { request: supportView(db, ticket) } }
+      }
+    }
+
     if (p2 === 'users' && !p3) {
       if (method === 'GET') {
         authed() // any platform role can view the internal team; mutations stay Owner-only
@@ -770,20 +989,15 @@ export function handle(method, path, body, token) {
       authed(PERMS.PLATFORM_USERS_MANAGE)
       const u = db.users.find((x) => x.id === p3 && !x.organizationId)
       if (!u) throw new ApiError(404, 'User not found.')
-      if (body.name) u.name = safeStr(body.name, 80) || u.name
-      if (body.email) {
-        const email = safeStr(body.email, 120).toLowerCase()
-        const fmt = emailError(email)
-        if (fmt) throw new ApiError(400, fmt)
-        if (db.users.some((x) => x.id !== u.id && x.email.toLowerCase() === email)) throw new ApiError(409, 'A user with this email already exists.')
-        if (email !== u.email) { u.email = email; killSessions(db, u.id) }
+      const keys = Object.keys(body || {})
+      if (keys.some((key) => key !== 'status')) {
+        throw new ApiError(403, 'The Owner cannot edit a team member’s name, email or role. Team members manage their own identity; only activation status can be changed here.')
       }
-      if (body.status) {
-        if (u.id === user.id && body.status !== 'active') throw new ApiError(400, 'You cannot deactivate your own account.')
-        u.status = body.status
-        if (u.status !== 'active') killSessions(db, u.id)
-      }
-      logAudit(db, { actorId: user.id, action: 'platform.user.updated', entity: 'user', summary: `Internal user ${u.name} updated`, severity: u.status === 'inactive' ? 'warn' : 'info' })
+      if (!['active', 'inactive'].includes(body && body.status)) throw new ApiError(400, 'Status must be active or inactive.')
+      if (u.id === user.id && body.status !== 'active') throw new ApiError(400, 'You cannot deactivate your own account.')
+      u.status = body.status
+      if (u.status !== 'active') killSessions(db, u.id)
+      logAudit(db, { actorId: user.id, action: u.status === 'inactive' ? 'platform.user.deactivated' : 'platform.user.reactivated', entity: 'user', summary: `Internal user ${u.name} ${u.status === 'inactive' ? 'deactivated' : 're-activated'}`, severity: u.status === 'inactive' ? 'warn' : 'info' })
       persist()
       return { status: 200, data: { user: userPublic(u) } }
     }
@@ -904,6 +1118,59 @@ export function handle(method, path, body, token) {
     const orgPlanBlocked = ['suspended', 'banned'].includes(org.status) || ps.status === 'expired'
     // active admins in this org — used for last-admin protection
     const activeAdmins = () => db.users.filter((x) => x.organizationId === orgId && x.role === ROLES.ORG_ADMIN && x.status === 'active')
+
+    if (p2 === 'platform-support') {
+      authed(PERMS.ORG_PLATFORM_SUPPORT)
+      if (!p3 && method === 'GET') {
+        const q = url.searchParams
+        let rows = (db.platformSupport || []).filter((ticket) => ticket.organizationId === orgId)
+        if (q.get('status')) rows = rows.filter((ticket) => ticket.status === q.get('status'))
+        rows = rows.slice().sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt))
+        const all = (db.platformSupport || []).filter((ticket) => ticket.organizationId === orgId)
+        return { status: 200, data: { requests: rows.map((ticket) => supportView(db, ticket)), counts: supportCounts(all) } }
+      }
+      if (!p3 && method === 'POST') {
+        const subject = safeStr(body && body.subject, 160)
+        const category = SUPPORT_CATEGORIES.includes(body && body.category) ? body.category : 'other'
+        const priority = SUPPORT_PRIORITIES.includes(body && body.priority) ? body.priority : 'medium'
+        if (!subject) throw new ApiError(400, 'A subject is required.')
+        const ticket = {
+          id: uid('sup'), ticketNo: null, organizationId: orgId,
+          subject, category, priority, status: 'new', createdBy: u.id,
+          createdAt: NOW().toISOString(), updatedAt: NOW().toISOString(),
+          acceptedAt: null, resolvedAt: null, decision: null, decisionHistory: [],
+          reapplyCount: 0, resolution: null, messages: [],
+        }
+        supportMessage(db, ticket, u, 'org', body || {}, { requireText: true })
+        db.platformSupport.unshift(ticket)
+        logAudit(db, { actorId: u.id, action: 'organization.platform_support.requested', entity: 'support_request', summary: `Platform support requested: “${subject}”`, organizationId: orgId })
+        persist()
+        return { status: 201, data: { request: supportView(db, ticket) } }
+      }
+      const ticket = p3 && (db.platformSupport || []).find((row) => row.id === p3 && row.organizationId === orgId)
+      if (p3 && !ticket) throw new ApiError(404, 'Support request not found.')
+      if (p3 && !parts[3] && method === 'GET') return { status: 200, data: { request: supportView(db, ticket) } }
+      if (p3 && parts[3] === 'reapply' && method === 'POST') {
+        if (ticket.status !== 'denied') throw new ApiError(409, 'Only a denied request can be re-applied.')
+        supportMessage(db, ticket, u, 'org', body || {}, { requireText: true })
+        ticket.decisionHistory = [...(ticket.decisionHistory || []), ticket.decision].filter(Boolean)
+        ticket.decision = null
+        ticket.status = 'new'
+        ticket.ticketNo = null
+        ticket.reapplyCount = Number(ticket.reapplyCount || 0) + 1
+        ticket.resolution = null
+        logAudit(db, { actorId: u.id, action: 'organization.platform_support.reapplied', entity: 'support_request', summary: `Re-applied platform support request “${ticket.subject}”`, organizationId: orgId })
+        persist()
+        return { status: 200, data: { request: supportView(db, ticket) } }
+      }
+      if (p3 && parts[3] === 'reply' && method === 'POST') {
+        if (!['open', 'in_progress'].includes(ticket.status)) throw new ApiError(409, 'Messages can only be sent on an accepted, active ticket.')
+        supportMessage(db, ticket, u, 'org', body || {})
+        ticket.status = 'in_progress'
+        persist()
+        return { status: 200, data: { request: supportView(db, ticket) } }
+      }
+    }
 
     if (p2 === 'dashboard' && method === 'GET') {
       authed(PERMS.ORG_DASHBOARD_VIEW)
@@ -1067,11 +1334,10 @@ export function handle(method, path, body, token) {
       }
       if (method === 'POST') {
         authed(PERMS.EVENT_CREATE)
-        // v2 event creation — General + Customisation + Branding.
-        // There is NO price and NO passkey here: print pricing lives in
-        // Organization Defaults (per frame), and booth access is via the
-        // booth app, not a CRM-entered passkey.
-        const { name, location, clientName, startDate, endDate, digitalCopy, filters, templateIds, branding } = body || {}
+        // Event creation snapshots the organization's layout prices and allows
+        // event-specific overrides. This keeps later default-price edits from
+        // silently changing an already configured event.
+        const { name, location, clientName, startDate, endDate, digitalCopy, filters, templateIds, branding, layoutPrices } = body || {}
         if (!name || !startDate || !endDate) throw new ApiError(400, 'Event name, start and end are required.')
         if (new Date(startDate) >= new Date(endDate)) throw new ApiError(400, 'End time must be after start time.')
         if (orgPlanBlocked) throw new ApiError(403, org.status === 'expired' || ps.status === 'expired' ? 'Plan expired — renew your plan to create events.' : 'Organization is ' + org.status + ' — new events are blocked.')
@@ -1103,6 +1369,7 @@ export function handle(method, path, body, token) {
           filters: fids,
           digitalCopy: !!digitalCopy,
           branding: { logos, tagline: (branding && branding.tagline) || '' },
+          layoutPrices: validateLayoutPrices(layoutPrices, { ...suggestedPriceMap(), ...((db.orgDefaults[orgId] && db.orgDefaults[orgId].layoutPrices) || {}) }),
           shortCode: name.slice(0, 4).toUpperCase().replace(/[^A-Z]/g, '') + String(Math.floor(10 + Math.random() * 90)),
           createdAt: NOW().toISOString(),
         }
@@ -1124,7 +1391,14 @@ export function handle(method, path, body, token) {
       for (const fid of (body && body.filters) || []) {
         if (!FILTERS.some((f) => f.id === fid)) throw new ApiError(400, `Unknown photo filter “${fid}”.`)
       }
+      const nextStart = body && body.startDate !== undefined ? body.startDate : e.startDate
+      const nextEnd = body && body.endDate !== undefined ? body.endDate : e.endDate
+      if (new Date(nextStart) >= new Date(nextEnd)) throw new ApiError(400, 'End time must be after start time.')
       Object.assign(e, pickDefined(body, ['name', 'location', 'clientName', 'startDate', 'endDate', 'templateIds', 'filters', 'digitalCopy', 'branding']))
+      if (body && body.layoutPrices !== undefined) {
+        const defaults = { ...suggestedPriceMap(), ...((db.orgDefaults[orgId] && db.orgDefaults[orgId].layoutPrices) || {}) }
+        e.layoutPrices = validateLayoutPrices(body.layoutPrices, e.layoutPrices || defaults)
+      }
       logAudit(db, { actorId: u.id, action: 'event.updated', entity: 'event', summary: `Event “${e.name}” updated`, organizationId: orgId })
       persist()
       return { status: 200, data: { event: e } }

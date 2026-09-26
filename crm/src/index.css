@@ -495,6 +495,24 @@ table.hp-table { width: 100%; border-collapse: collapse; font-size: 13px; }
 }
 .frame-tile.selected { border-color: var(--hp-pink); box-shadow: 0 0 0 3px rgba(234, 9, 127, 0.14); }
 
+/* Subscription plan catalogue */
+.plan-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 14px; }
+.form-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; }
+
+/* Platform support request review + shared ticket thread */
+.support-review-grid { display: grid; grid-template-columns: minmax(210px, .72fr) minmax(0, 1.6fr); gap: 18px; }
+.support-review-list { border: 1px solid var(--line); border-radius: var(--r-md); overflow: hidden; align-self: start; max-height: 530px; overflow-y: auto; }
+.support-review-list button { display: block; width: 100%; padding: 11px 12px; border: none; border-bottom: 1px solid var(--line-soft); background: var(--surface); color: var(--ink); text-align: left; cursor: pointer; }
+.support-review-list button:last-child { border-bottom: none; }
+.support-review-list button:hover { background: var(--surface-2); }
+.support-review-list button.active { background: var(--hp-pink-soft); box-shadow: inset 3px 0 var(--hp-pink); }
+.support-images { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 6px; }
+.support-images img { width: 112px; height: 84px; object-fit: cover; border-radius: 8px; border: 1px solid var(--line); background: var(--surface-2); }
+.support-compose-images { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 8px; }
+.support-compose-images > span { position: relative; display: inline-flex; }
+.support-compose-images img { width: 62px; height: 48px; object-fit: cover; border: 1px solid var(--line); border-radius: 7px; }
+.support-compose-images button { position: absolute; right: -5px; top: -5px; width: 18px; height: 18px; display: grid; place-items: center; border: none; border-radius: 50%; background: var(--danger); color: #fff; cursor: pointer; }
+
 /* ticket thread */
 .thread-msg { display: flex; gap: 10px; margin-bottom: 14px; }
 .thread-bubble {
@@ -567,4 +585,8 @@ html[data-theme="dark"] .theme-seg button.on { background: var(--line); color: v
 }
 
 /* Revenue: wallet + settlement side-by-side, stacks on narrow screens */
-@media (max-width: 860px) { .wallet-grid { grid-template-columns: 1fr !important; } }
+@media (max-width: 860px) {
+  .wallet-grid { grid-template-columns: 1fr !important; }
+  .support-review-grid, .form-grid-2 { grid-template-columns: 1fr; }
+  .support-review-list { max-height: 190px; }
+}

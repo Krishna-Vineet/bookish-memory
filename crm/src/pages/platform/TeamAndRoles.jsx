@@ -10,7 +10,7 @@ export default function TeamAndRoles() {
   const { user, toast } = useApp()
   const isOwner = user.role === ROLES.OWNER
   const [users, setUsers] = useState(null)
-  const [editing, setEditing] = useState(null) // 'new' or user
+  const [editing, setEditing] = useState(null) // 'new' only — existing identities are self-managed
   const [draft, setDraft] = useState(null)
   const [deactFor, setDeactFor] = useState(null)
   const [busy, setBusy] = useState(false)
@@ -24,13 +24,8 @@ export default function TeamAndRoles() {
     if (!draft) return
     setBusy(true)
     try {
-      if (editing === 'new') {
-        await api.platform.createUser(draft)
-        toast(`Created ${ROLE_LABELS[draft.role]} account`)
-      } else {
-        await api.platform.updateUser(editing.id, { name: draft.name, email: draft.email, status: draft.status })
-        toast('User updated')
-      }
+      await api.platform.createUser(draft)
+      toast(`Created ${ROLE_LABELS[draft.role]} account`)
       setEditing(null)
       load()
     } catch (e) {
@@ -63,7 +58,7 @@ export default function TeamAndRoles() {
           <div className="page-title">Team & Roles</div>
           <div className="page-sub">
             {isOwner
-              ? 'Internal HappyPix platform team. Only the Owner can manage these accounts. Passwords are self-service — nobody can reset another person’s password.'
+              ? 'Internal HappyPix platform team. Existing names and emails are self-managed; the Owner can only deactivate or re-activate accounts.'
               : 'Read-only view of the internal platform team. Permissions are fixed by platform policy.'}
           </div>
         </div>
@@ -98,10 +93,16 @@ export default function TeamAndRoles() {
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 6 }}>
                     <Chip tone={u.role === ROLES.OWNER ? 'pink' : u.role === ROLES.PLATFORM_ADMIN ? 'purple' : 'info'}>{ROLE_LABELS[u.role]}</Chip>
                     {isOwner && u.id !== user.id && (
-                      <div className="row gap-8">
-                        <Button size="sm" variant="ghost" icon="edit" onClick={() => { setEditing(u); setDraft({ name: u.name, email: u.email, status: u.status }) }}>Edit</Button>
-                        <Button size="sm" variant="ghost" icon={u.status === 'active' ? 'ban' : 'check'} title={u.status === 'active' ? 'Deactivate' : 'Re-activate'} onClick={() => setDeactFor(u)} style={{ color: u.status === 'active' ? 'var(--danger)' : 'var(--hp-green-ink)' }} />
-                      </div>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        icon={u.status === 'active' ? 'ban' : 'check'}
+                        title={u.status === 'active' ? 'Deactivate' : 'Re-activate'}
+                        onClick={() => setDeactFor(u)}
+                        style={{ color: u.status === 'active' ? 'var(--danger)' : 'var(--hp-green-ink)' }}
+                      >
+                        {u.status === 'active' ? 'Deactivate' : 'Re-activate'}
+                      </Button>
                     )}
                   </div>
                 </div>
@@ -143,17 +144,17 @@ export default function TeamAndRoles() {
       <Modal
         open={!!editing}
         onClose={() => setEditing(null)}
-        title={editing === 'new' ? 'Create internal user' : `Edit ${editing?.name}`}
-        sub="Only Platform Admin and Support Manager accounts can be created from the CRM."
+        title="Create internal user"
+        sub="Only Platform Admin and Support Manager accounts can be created here. After creation, they manage their own name and email from Profile."
         footer={
           <>
             <Button variant="ghost" onClick={() => setEditing(null)}>Cancel</Button>
-            <Button variant="primary" onClick={save} disabled={busy || !draft}>{busy ? 'Saving…' : editing === 'new' ? 'Create user' : 'Save changes'}</Button>
+            <Button variant="primary" onClick={save} disabled={busy || !draft}>{busy ? 'Saving…' : 'Create user'}</Button>
           </>
         }
       >
         {editing ? (
-          <UserForm key={editing === 'new' ? 'new' : editing.id} initial={editing === 'new' ? null : editing} onChange={setDraft} isOwnerView={isOwner} />
+          <UserForm key="new" initial={null} onChange={setDraft} isOwnerView={isOwner} />
         ) : null}
       </Modal>
 
@@ -180,7 +181,7 @@ function UserForm({ initial, onChange, isOwnerView }) {
   )
   useEffect(() => {
     onChange({ ...form, password: initial ? undefined : form.password })
-  })
+  }, [form, initial, onChange])
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }))
   return (
     <div>

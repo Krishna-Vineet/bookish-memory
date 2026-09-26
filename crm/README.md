@@ -11,8 +11,8 @@ charts and layout are hand-rolled SVG/CSS so the app works in fully offline prev
 npm install
 npm run dev        # http://localhost:5173
 npm run build      # production bundle in dist/
-node scripts/api-smoke.mjs    # API contract test (107 assertions)
-node scripts/render-test.mjs  # role × screen render test (32 cases)
+node scripts/api-smoke.mjs    # API contract test (157 assertions)
+node scripts/render-test.mjs  # role × screen render test (38 cases)
 ```
 
 ### Configuration
@@ -31,11 +31,11 @@ Any password of 6+ chars signs a demo user in (the quick-login chips use `demo12
 
 | Role | Email | What it can do |
 |---|---|---|
-| Owner | `owner@happypix.com` | Everything: platform revenue, suspend/ban/restore organizations, internal team |
-| Platform Admin | `priya@happypix.com` | Platform console **minus** revenue & user management; can manage templates (frame catalogue changes are Owner-only) |
-| Support Manager | `support@happypix.com` | Platform dashboard, organizations (read) — templates/revenue/team-audit not visible |
-| Organization Admin | `sana@sunsetweddings.com` | Full org workspace: revenue, events & devices, support, defaults, coupons, team |
-| Organization Manager | `rohit@sunsetweddings.com` | Operational org workspace: events & devices, support — **no** revenue/defaults/coupons/audit |
+| Owner | `owner@happypix.com` | Everything: revenue, plans, support, organization lifecycle, internal team |
+| Platform Admin | `priya@happypix.com` | Platform console and organization support, minus revenue/plan/user management |
+| Support Manager | `support@happypix.com` | Platform dashboard, organizations (read), and full organization-support ticket handling |
+| Organization Admin | `sana@sunsetweddings.com` | Full org workspace: revenue, events, both support areas, defaults, coupons, team |
+| Organization Manager | `rohit@sunsetweddings.com` | Operations and HappyPix/guest support — **no** revenue/default editing/coupons/audit |
 
 Other seeded orgs worth exploring (login as their admin, e.g. `arpita@pika.in`):
 Pika (professional, **expiring in 11 days**), Nova Occasions (fresh **trial**),
@@ -55,7 +55,7 @@ The client (`src/api/client.js`) switches from the mock to real `fetch` calls ag
 are itemised in `BACKEND-CHANGES.md`** — until those land, the real backend serves the old
 v1 shape and this CRM will not work against it.
 
-## The 13 screens
+## Role-aware screens
 
 | Screen | Owner | Platform Admin | Support Manager | Org Admin | Org Manager |
 |---|---|---|---|---|---|
@@ -63,16 +63,18 @@ v1 shape and this CRM will not work against it.
 | Platform Dashboard | ✔ | ✔ | ✔ | — | — |
 | Platform Revenue | ✔ | — | — | — | — |
 | Organizations (suspend/ban/restore = Owner) | ✔ | read | read | — | — |
-| Templates & Frames | manage | manage (frames read-only) | — | — | — |
-| Team & Roles | manage | read | — | — | — |
+| Organization Support | manage | manage | manage | — | — |
+| Subscription Plans | manage | — | — | — | — |
+| Template Library | manage | manage | — | — | — |
+| Team & Roles | create + activate/deactivate | read | — | — | — |
 | Audit & Logs (platform) | ✔ | ✔ | — | — | — |
 | Org Dashboard | — | — | — | ✔ | ✔ |
 | Org Revenue | — | — | — | ✔ | — |
 | Events & Devices | — | — | — | ✔ | ✔ |
-| Support (guest tickets) | — | — | — | ✔ | ✔ |
+| HappyPix Support (org → platform) | — | — | — | ✔ | ✔ |
+| Guest Support (booth tickets) | — | — | — | ✔ | ✔ |
 | Organization Defaults | — | — | — | manage | read-only |
 | Coupon Management | — | — | — | ✔ | — |
-| Org Audit & Logs | — | — | — | ✔ | — |
 
 The matrix is fixed in `src/lib/roles.js` (single source of truth). It is enforced three
 times: the sidebar only renders what a role may see, the router redirects on forbidden paths,
@@ -86,32 +88,31 @@ UUID-paired devices, never users.
   not_subscribed / suspended / banned — from plan + org status + trial-extension flags.
 - **Plan limits block creation server-side**: parallel *active* events only (finished events
   never count); device registration is capped; expired/suspended/banned orgs cannot create
-  events or register devices.
+  events or register devices. The **Owner** can view, edit, hide and add plans in the
+  Subscription Plans catalogue; edited limits are enforced for subscribed organizations.
 - **Suspend/ban with mandatory reason**, full restore path, every action audit-logged.
 - **Coupons**: org-owned, quantity-limited, expiry-checked, pausable, event-scoped or
   global; the booth only ever shows an "Enter Coupon" field.
-- **Events have no price and no passkey.** Creation asks exactly: *General* (event name,
-  client/host, location, start, end, digital-copy toggle), *Customisation* (photo filters
-  from the available options + templates from all available platform templates) and
-  *Branding* (client logo — default none, added to the print footer — plus a default
-  tagline, editable later).
-- **A frame is the canvas a print is made on** — its background design carries the
-  template's photo slots, and the complete output print (photos + 15% branding footer)
-  is printed on the frame. The catalogue is a platform asset: the **Owner** adds and
-  removes frames (remove is blocked while a frame is enabled at any organization).
-- **Defaults** are the only org config surface — and the only place print pricing
-  exists: name, logo, booth idle timeout **in seconds**, and for *every* platform frame a
-  price + a "available on booth" toggle, each rendered with the same consistent
-  `FramePreview` the Owner sees. Events inherit them.
+- **Events have no passkey and no single scalar price.** Creation includes *General*,
+  *Customisation*, *Event print pricing* and *Branding*. Layout prices start from
+  Organization Defaults, can be overridden per event, and are saved as the event's full
+  effective `layoutPrices` snapshot so later default changes do not alter that event.
+- **Defaults** remain the organization-wide baseline: name, logo, booth idle timeout in
+  **seconds**, payout settings and a guest price for every layout iteration. Event creation
+  inherits these prices before applying event-only overrides.
 - **Templates** use the original HappyPix creation flow verbatim: Direct Upload or
   AI Generate, Design Scope *Universal Background* or *Specific Layout* (photo slots
   1/2/3/4/6 × portrait/landscape/strip/square), AI output previewed before saving.
   Photo-slot coordinates are always computed by the Architecture V1 engine
   (`src/lib/templates.js`; bottom 15% of every canvas reserved for branding). Orgs select
   from the active library when creating events; disabled templates cannot be selected.
-- **Team**: org admins create *Organization Manager* accounts only (role is server-selected);
-  owners create *Platform Admin* / *Support Manager* only. Password reset returns a
-  one-time temporary password.
+- **Platform support** is a separate org↔HappyPix workflow available to every organization
+  and platform role. An organization raises a review request; platform staff deny it with a
+  visible reason or accept it into a numbered ticket. Both sides then chat and attach images.
+  Only platform staff resolve or reopen; denied requests may be re-applied with new text.
+- **Team**: org admins create organization admins/managers. Owners create platform admins/
+  support managers, but cannot edit an existing teammate's name or email — they can only
+  deactivate or re-activate the account. Password reset is self-service.
 - **Audit** is written on every mutating action and read is permission-gated.
 
 ## Project map
@@ -131,10 +132,12 @@ src/
                   (the consistent frame renderer), layout/AppShell
   pages/
     Login.jsx
-    platform/     Dashboard, Revenue, Organizations, Templates & Frames, TeamAndRoles, AuditLogs
-    org/          Dashboard, Revenue, EventsDevices, Support, OrgDefaults, Coupons
+    platform/     Dashboard, Revenue, Organizations, PlatformSupport, SubscriptionPlans,
+                  Templates, TeamAndRoles, AuditLogs
+    org/          Dashboard, Revenue, EventsDevices, PlatformSupport, guest Support,
+                  Team, OrgDefaults, Coupons
     Profile.jsx
 scripts/
-  api-smoke.mjs   62-assertion API test (node scripts/api-smoke.mjs)
-  render-test.mjs 30-case role×screen render test (node scripts/render-test.mjs)
+  api-smoke.mjs   API contract test (node scripts/api-smoke.mjs)
+  render-test.mjs role×screen render test (node scripts/render-test.mjs)
 ```
