@@ -1,6 +1,6 @@
 // Events & Devices (org screen).
 //
-// Event creation/updates ask exactly four things — no price, no passkey:
+// Event creation/updates include event-specific layout price overrides and no passkey:
 //   1. General       — event name, client/host, location, start, end,
 //                      digital-copy toggle
 //   2. Customisation — photo filters + the TEMPLATE GALLERY: every
@@ -15,9 +15,9 @@
 //                      each template at its reserved footer positions,
 //                      + default tagline (editable later)
 //
-// Print pricing lives only in Organization Defaults (per layout iteration,
-// set by the org admin). Booth guest access is handled by the booth app,
-// not a CRM-entered passkey.
+// Organization Defaults supplies the starting price for every layout iteration.
+// Each event stores its own effective price snapshot, which can be overridden
+// while creating or editing the event. Booth access is handled by the booth app.
 
 import { useEffect, useMemo, useState, useCallback } from 'react'
 import { api } from '../../api/index.js'
@@ -144,10 +144,10 @@ export default function EventsDevices() {
       <div className="page-head">
         <div>
           <div className="page-title">Events & Devices</div>
-          <div className="page-sub">Create events (general details, customisation and branding — never a price), register booths, and assign events to devices.</div>
+          <div className="page-sub">Create events, override layout prices from your organization defaults, register booths, and assign events to devices.</div>
         </div>
         {isAdmin || user.role === ROLES.ORG_MANAGER ? (
-          <Button variant="primary" icon="plus" onClick={() => setEditor('new')} disabled={!!events && !events.canCreate}>
+          <Button variant="primary" icon="plus" onClick={() => setEditor('new')} disabled={(!!events && !events.canCreate) || !templates || !defaults}>
             Create event
           </Button>
         ) : null}
@@ -287,7 +287,7 @@ export default function EventsDevices() {
                     <tr>
                       <th>Device</th>
                       <th>UUID</th>
-                      <th>Hardware</th>
+                      <th>Hardware health</th>
                       <th>Status</th>
                       <th>Booth operator</th>
                       <th>Last seen</th>
@@ -440,32 +440,61 @@ export default function EventsDevices() {
   )
 }
 
-// ---------------- Device telemetry (Hardware column) ----------------
-// Numbers the booth app pushes to the backend: prints made by the printer,
-// shutter count of the camera, camera battery %. The CRM only reads this.
+// ---------------- Device telemetry (Hardware health column) ----------------
+// The booth heartbeat reports both lifetime counters and live peripheral
+// connections: camera, printer and the external kiosk display.
+
+const PERIPHERALS = [
+  { key: 'camera', label: 'Camera', short: 'Camera', icon: 'camera' },
+  { key: 'printer', label: 'Printer', short: 'Printer', icon: 'printer' },
+  { key: 'kioskScreen', label: 'External kiosk screen', short: 'Screen', icon: 'monitor' },
+]
 
 function TelemetryCell({ device }) {
   const t = device.telemetry
-  if (!t) return <span className="t12 faint">No telemetry yet</span>
   const num = (n) => Number(n || 0).toLocaleString('en-IN')
   return (
     <div className="tel">
-      {device.hardware?.includes('printer') ? (
-        <span className="tel-row" title="Prints this printer has made (pushed by the booth app)">
-          <Icon name="printer" size={13} />
-          <b>{num(t.prints)}</b>&nbsp;prints
-        </span>
-      ) : null}
-      {device.hardware?.includes('camera') ? (
-        <span className="tel-row" title="Camera shutter count (pushed by the booth app)">
-          <Icon name="aperture" size={13} />
-          <b>{num(t.shutters)}</b>&nbsp;clicks
-        </span>
-      ) : null}
-      {t.batteryPct != null ? <BatteryPill pct={t.batteryPct} /> : null}
-      <span className="tel-stale" title={`Last pushed ${new Date(t.updatedAt).toLocaleString()}`}>
-        via booth · {relativeTime(t.updatedAt)}
-      </span>
+      <div className="hw-health" aria-label="Peripheral connection health">
+        {PERIPHERALS.map((item) => {
+          const connected = device.connections?.[item.key] === true
+          return (
+            <span key={item.key} className="hw-health-item">
+              <span
+                className={`hw-connection ${connected ? 'connected' : 'disconnected'}`}
+                title={`${item.label}: ${connected ? 'connected' : 'not connected'}`}
+                aria-label={`${item.label} ${connected ? 'connected' : 'not connected'}`}
+              >
+                <Icon name={item.icon} size={15} />
+                <span className="hw-connection-mark"><Icon name={connected ? 'check' : 'x'} size={8} strokeWidth={3} /></span>
+              </span>
+              <span>{item.short}</span>
+            </span>
+          )
+        })}
+      </div>
+      {t ? (
+        <>
+          {device.hardware?.includes('printer') ? (
+            <span className="tel-row" title="Prints this printer has made (pushed by the booth app)">
+              <Icon name="printer" size={13} />
+              <b>{num(t.prints)}</b>&nbsp;prints
+            </span>
+          ) : null}
+          {device.hardware?.includes('camera') ? (
+            <span className="tel-row" title="Camera shutter count (pushed by the booth app)">
+              <Icon name="aperture" size={13} />
+              <b>{num(t.shutters)}</b>&nbsp;clicks
+            </span>
+          ) : null}
+          {t.batteryPct != null ? <BatteryPill pct={t.batteryPct} /> : null}
+          <span className="tel-stale" title={`Last pushed ${new Date(device.connections?.updatedAt || t.updatedAt).toLocaleString()}`}>
+            via booth · {relativeTime(device.connections?.updatedAt || t.updatedAt)}
+          </span>
+        </>
+      ) : (
+        <span className="tel-stale">No counters reported yet</span>
+      )}
     </div>
   )
 }
@@ -607,11 +636,23 @@ function EventEditor({ open, initial, templates, defaults, onClose, onSaved }) {
     // Templates: every published template is pre-selected for new events;
     // edits keep the event's saved selection.
     templateIds: initial ? (initial.templateIds || []) : templates.map((t) => t.id),
+    // A full effective snapshot is saved on the event. Existing event values
+    // win; otherwise start from the organization's current defaults.
+    layoutPrices: { ...(defaults?.layoutPrices || {}), ...(initial?.layoutPrices || {}) },
     logos: initial?.branding?.logos || (initial?.branding?.logoUrl ? [initial.branding.logoUrl] : []),
     tagline: initial?.branding?.tagline || '',
   }))
   const [tf, setTf] = useState({ orientation: '', sheet: '', slots: '', category: '' })
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }))
+
+  useEffect(() => {
+    if (!defaults?.layoutPrices) return
+    setForm((current) => {
+      if (Object.keys(current.layoutPrices || {}).length) return current
+      return { ...current, layoutPrices: { ...defaults.layoutPrices, ...(initial?.layoutPrices || {}) } }
+    })
+  }, [defaults, initial])
+
   const toggleIn = (key, id) =>
     setForm((f) => ({ ...f, [key]: f[key].includes(id) ? f[key].filter((x) => x !== id) : [...f[key], id] }))
 
@@ -642,6 +683,26 @@ function EventEditor({ open, initial, templates, defaults, onClose, onSaved }) {
         (a.layout.orientation === 'portrait' ? -1 : 1)
       )
   }, [filteredTemplates])
+
+  const selectedPriceRows = useMemo(() => {
+    const byKey = new Map()
+    for (const template of templates) {
+      if (!form.templateIds.includes(template.id)) continue
+      const layout = layoutById(template.layoutId)
+      if (!layout) continue
+      const key = PRICE_KEY(layout.familyId, layout.slots)
+      if (!byKey.has(key)) byKey.set(key, { key, layout })
+    }
+    return [...byKey.values()].sort((a, b) =>
+      FAMILY_ORDER[a.layout.familyId] - FAMILY_ORDER[b.layout.familyId] || a.layout.slots - b.layout.slots
+    )
+  }, [templates, form.templateIds])
+
+  const setEventPrice = (key, value) => {
+    if (value === '') return
+    const amount = Math.max(0, Math.round(Number(value) || 0))
+    setForm((current) => ({ ...current, layoutPrices: { ...current.layoutPrices, [key]: amount } }))
+  }
 
   const selectAllShown = () =>
     setForm((f) => ({ ...f, templateIds: [...new Set([...f.templateIds, ...filteredTemplates.map((t) => t.id)])] }))
@@ -706,6 +767,7 @@ function EventEditor({ open, initial, templates, defaults, onClose, onSaved }) {
         digitalCopy: form.digitalCopy,
         filters: form.filters,
         templateIds: form.templateIds,
+        layoutPrices: form.layoutPrices,
         branding: { logos: form.logos, tagline: form.tagline.trim() },
       }
       if (initial) await api.org.updateEvent(initial.id, body)
@@ -721,14 +783,14 @@ function EventEditor({ open, initial, templates, defaults, onClose, onSaved }) {
 
   if (!open) return null
 
-  const priceFor = (l) => defaults?.layoutPrices?.[PRICE_KEY(l.familyId, l.slots)]
+  const priceFor = (l) => form.layoutPrices?.[PRICE_KEY(l.familyId, l.slots)]
 
   return (
     <Modal
       open={open}
       onClose={onClose}
       title={initial ? `Edit “${initial.name}”` : 'Create event'}
-      sub="General details, customisation and branding — there is no price here. Layout prices come from Organization Defaults."
+      sub="Start from Organization Defaults, optionally override layout prices, then save the event-specific price snapshot."
       width="xwide"
       footer={
         <>
@@ -840,7 +902,7 @@ function EventEditor({ open, initial, templates, defaults, onClose, onSaved }) {
                       {layout.name}
                       <span className="t11 muted fw400" style={{ fontWeight: 400 }}> · {layoutLabel(layout)}</span>
                     </span>
-                    <span className="chip chip-info" style={{ height: 19, fontSize: 10.5 }} title="Guest price from Organization Defaults">
+                    <span className="chip chip-info" style={{ height: 19, fontSize: 10.5 }} title="Guest price saved for this event">
                       {priceFor(layout) != null ? `₹${priceFor(layout)}/print` : 'not priced'}
                     </span>
                   </div>
@@ -895,7 +957,49 @@ function EventEditor({ open, initial, templates, defaults, onClose, onSaved }) {
         </div>
 
         <div>
-          <SectionLabel n={3} title="Branding" />
+          <SectionLabel n={3} title="Event print pricing" />
+          <div className="card" style={{ marginBottom: 18, overflow: 'hidden', boxShadow: 'none' }}>
+            <div style={{ padding: '11px 13px', background: 'var(--surface-2)', borderBottom: '1px solid var(--line-soft)' }}>
+              <div className="t12 fw6">Prices used by this event</div>
+              <div className="t11 muted mt-8" style={{ lineHeight: 1.45 }}>
+                These started from Organization Defaults. Changes below affect only this event and remain saved even if the defaults change later.
+              </div>
+            </div>
+            <div style={{ maxHeight: 290, overflowY: 'auto', padding: '4px 13px' }}>
+              {selectedPriceRows.length ? selectedPriceRows.map(({ key, layout }) => {
+                const value = form.layoutPrices?.[key]
+                const defaultValue = defaults?.layoutPrices?.[key]
+                const changed = value !== defaultValue
+                return (
+                  <div key={key} className="row between gap-12" style={{ padding: '9px 0', borderBottom: '1px solid var(--line-soft)' }}>
+                    <div style={{ minWidth: 0 }}>
+                      <div className="t12 fw6 ellipsis">{layout.name} · {layout.slots} image{layout.slots === 1 ? '' : 's'}</div>
+                      <div className="t11 faint">{changed ? `Overridden · default ₹${defaultValue ?? 0}` : 'Using organization default'}</div>
+                    </div>
+                    <div className="row gap-6" style={{ flex: 'none' }}>
+                      <span className="t12 muted">₹</span>
+                      <TextInput
+                        type="number"
+                        min="0"
+                        max="100000"
+                        value={value ?? ''}
+                        onChange={(e) => setEventPrice(key, e.target.value)}
+                        style={{ width: 82, height: 32 }}
+                        aria-label={`${layout.name} ${layout.slots} image price`}
+                      />
+                      {changed ? (
+                        <Button size="sm" variant="ghost" icon="refresh" title="Reset to organization default" onClick={() => setEventPrice(key, defaultValue ?? 0)} />
+                      ) : null}
+                    </div>
+                  </div>
+                )
+              }) : (
+                <p className="t12 faint" style={{ padding: '14px 0' }}>Select templates to configure their layout prices.</p>
+              )}
+            </div>
+          </div>
+
+          <SectionLabel n={4} title="Branding" />
           <Field
             label="Event logos — sponsors, host, venue, teams"
             hint="Optional, up to 15. These are NOT your organization logo — they are the extra layer of personalisation for this event (like BMW, Audi and Ferrari logos at a car race). Each template places them at its reserved footer positions."
@@ -955,7 +1059,7 @@ function EventEditor({ open, initial, templates, defaults, onClose, onSaved }) {
                 <div className="t11 muted" style={{ maxWidth: 190, lineHeight: 1.55 }}>
                   Previewing <b>{previewTemplate.name}</b> ({layoutShortLabel(layoutById(previewTemplate.layoutId))}). Guests pay{' '}
                   <b>{priceFor(layoutById(previewTemplate.layoutId)) != null ? `₹${priceFor(layoutById(previewTemplate.layoutId))}` : 'no price set'}</b> for
-                  this layout — set in Organization Defaults, never here. <b>{form.templateIds.length}</b> template(s) available at this event.
+                  this layout using this event's saved price. <b>{form.templateIds.length}</b> template(s) available at this event.
                 </div>
               </div>
             ) : (

@@ -8,7 +8,7 @@ import { suggestedPriceMap } from '../../lib/layouts.js'
 import { DESIGNER_TEMPLATES, AI_SEED_TEMPLATES, PLAYGROUND_SEED_TEMPLATES } from '../../lib/templateMeta.js'
 
 const DB_KEY = 'happypix_crm_v2_db'
-const DB_VERSION = 7
+const DB_VERSION = 9
 
 function mulberry32(a) {
   return function () {
@@ -136,12 +136,23 @@ const SUBSCRIPTIONS = [
   { id: 'sub-nova', organizationId: 'org-nova', plan: 'trial', amount: 0, currency: 'INR', gateway: 'trial', paidAt: null, startDate: D('2026-09-16T10:00:00+05:30'), endDate: D('2026-09-30T10:00:00+05:30'), invoice: null },
 ]
 
+// ---------------- Subscription plan catalogue (Owner-managed) ----------------
+// `key` is stable because subscriptions and organizations reference it.
+const PLAN_CATALOG = [
+  { id: 'plan-trial', key: 'trial', name: 'Trial', description: 'A short evaluation plan for a new organization.', price: 0, durationMonths: 0, durationLabel: '14 days', devices: 1, events: 1, active: true, createdAt: daysAgo(500), updatedAt: daysAgo(20) },
+  { id: 'plan-starter', key: 'starter', name: 'Starter', description: 'For a single booth running one event at a time.', price: 1999, durationMonths: 3, durationLabel: '3 months', devices: 1, events: 1, active: true, createdAt: daysAgo(500), updatedAt: daysAgo(20) },
+  { id: 'plan-basic', key: 'basic', name: 'Basic', description: 'For growing teams with a few booths.', price: 2999, durationMonths: 3, durationLabel: '3 months', devices: 3, events: 2, active: true, createdAt: daysAgo(500), updatedAt: daysAgo(20) },
+  { id: 'plan-professional', key: 'professional', name: 'Professional', description: 'For established photobooth operators.', price: 5999, durationMonths: 6, durationLabel: '6 months', devices: 5, events: 5, active: true, createdAt: daysAgo(500), updatedAt: daysAgo(8) },
+  { id: 'plan-business', key: 'business', name: 'Business', description: 'Higher limits for multi-city operators.', price: 9999, durationMonths: 6, durationLabel: '6 months', devices: 10, events: 10, active: true, createdAt: daysAgo(500), updatedAt: daysAgo(8) },
+  { id: 'plan-custom', key: 'custom', name: 'Custom', description: 'A negotiated plan for enterprise requirements.', price: null, durationMonths: 12, durationLabel: 'Custom term', devices: 25, events: 20, active: true, createdAt: daysAgo(500), updatedAt: daysAgo(8) },
+]
+
 // ---------------- Devices (UUID pairing model) ----------------
 // operatorName/operatorPhone — the on-ground booth operator assigned by an
 // org admin/manager so the rest of the team knows who to contact.
-// telemetry — hardware stats the booth app pushes (prints made by the
-// printer, shutter count of the camera, camera battery %) via
-// POST /api/booth/devices/:uuid/telemetry; the CRM only reads it.
+// telemetry + connections — hardware stats and camera/printer/external-screen
+// connection health pushed via POST /api/booth/devices/:uuid/telemetry; the
+// CRM only reads and displays the latest report.
 const uuid = (s) => s
 const tel = (prints, shutters, batteryPct, at) => ({ prints, shutters, batteryPct, updatedAt: at })
 const DEVICES = [
@@ -160,6 +171,25 @@ const DEVICES = [
   { id: 'dev-riya-1', organizationId: 'org-riya', deviceUuid: uuid('d8e9f0a1-b2c3-4d4e-d5e6-f7a8b9c0d1e2'), deviceName: 'Riya Booth', location: 'Dehradun', hardware: ['camera', 'printer'], lastSeenAt: daysAgo(14, 10, 30), registeredAt: daysAgo(100), status: 'active', assignedEventId: null, operatorName: null, operatorPhone: null, telemetry: tel(921, 2540, 74, daysAgo(14, 10, 0)) },
   { id: 'dev-nova-1', organizationId: 'org-nova', deviceUuid: uuid('e0f1a2b3-c4d5-4e6e-e7f8-a9b0c1d2e3f4'), deviceName: 'Nova Test Booth', location: 'Kolkata', hardware: ['camera', 'printer', 'wifi'], lastSeenAt: daysAgo(0, 9, 58), registeredAt: daysAgo(7), status: 'active', assignedEventId: 'evt-nova-1', operatorName: null, operatorPhone: null, telemetry: tel(64, 205, 83, daysAgo(0, 9, 50)) },
 ]
+
+// Last peripheral connection report from the booth heartbeat. All three are
+// shown in the CRM even when a peripheral is disconnected.
+const DEVICE_CONNECTIONS = {
+  'dev-sun-1': { camera: true, printer: true, kioskScreen: true, updatedAt: daysAgo(0, 11, 20) },
+  'dev-sun-2': { camera: true, printer: false, kioskScreen: true, updatedAt: daysAgo(0, 10, 50) },
+  'dev-sun-3': { camera: true, printer: true, kioskScreen: false, updatedAt: daysAgo(0, 9, 0) },
+  'dev-sun-4': { camera: false, printer: false, kioskScreen: false, updatedAt: daysAgo(6, 21, 0) },
+  'dev-kade-1': { camera: true, printer: true, kioskScreen: true, updatedAt: daysAgo(1, 19, 30) },
+  'dev-pika-1': { camera: true, printer: true, kioskScreen: true, updatedAt: daysAgo(0, 11, 0) },
+  'dev-pika-2': { camera: true, printer: false, kioskScreen: true, updatedAt: daysAgo(2, 17, 0) },
+  'dev-pika-3': { camera: true, printer: true, kioskScreen: false, updatedAt: daysAgo(1, 14, 0) },
+  'dev-tech-1': { camera: true, printer: true, kioskScreen: true, updatedAt: daysAgo(0, 10, 40) },
+  'dev-tech-2': { camera: true, printer: false, kioskScreen: true, updatedAt: daysAgo(3, 11, 45) },
+  'dev-vish-1': { camera: true, printer: true, kioskScreen: true, updatedAt: daysAgo(0, 7, 0) },
+  'dev-alpha-1': { camera: false, printer: false, kioskScreen: false, updatedAt: daysAgo(42, 18, 0) },
+  'dev-riya-1': { camera: false, printer: false, kioskScreen: false, updatedAt: daysAgo(14, 10, 0) },
+  'dev-nova-1': { camera: true, printer: true, kioskScreen: false, updatedAt: daysAgo(0, 9, 50) },
+}
 
 // ---------------- Events (v2 shape: no passkey, no print price) ----------------
 // fields: digitalCopy (guests can order a digital copy), filters (allowed
@@ -348,6 +378,59 @@ const TICKETS = [
   },
 ]
 
+// ---------------- Organization → HappyPix platform support ----------------
+// Requests are reviewed first. Acceptance assigns a ticket number and opens
+// the shared conversation; denial carries a visible reason and can be
+// re-applied with a new organization message.
+const PLATFORM_SUPPORT = [
+  {
+    id: 'sup-1', ticketNo: 'HPX-2609-0001', organizationId: 'org-sunset',
+    subject: 'Booth sync intermittently loses template updates', category: 'technical', priority: 'high', status: 'in_progress',
+    createdBy: 'usr-sana', createdAt: daysAgo(3, 9), updatedAt: daysAgo(0, 10, 40), acceptedAt: daysAgo(3, 11), resolvedAt: null,
+    decision: { type: 'accepted', reason: null, by: 'usr-sm', at: daysAgo(3, 11) }, reapplyCount: 0, resolution: null,
+    messages: [
+      { id: 'sm-1', authorId: 'usr-sana', authorName: 'Sana Kapoor', authorRole: 'Organization Admin', side: 'org', at: daysAgo(3, 9), text: 'Two booths receive event details but sometimes keep an older template list after sync. We have restarted both units.', images: [] },
+      { id: 'sm-2', authorId: 'usr-sm', authorName: 'Arjun Rao', authorRole: 'Support Manager', side: 'platform', at: daysAgo(3, 11), text: 'Accepted as HPX-2609-0001. We are checking the sync cursor and device logs.', images: [] },
+      { id: 'sm-3', authorId: 'usr-rohit', authorName: 'Rohit Das', authorRole: 'Organization Manager', side: 'org', at: daysAgo(0, 10, 40), text: 'It happened again on Booth 02 this morning. The event itself remained assigned.', images: [] },
+    ],
+  },
+  {
+    id: 'sup-2', ticketNo: null, organizationId: 'org-sunset',
+    subject: 'Request to remove an old invoice', category: 'billing', priority: 'low', status: 'denied',
+    createdBy: 'usr-sana', createdAt: daysAgo(8, 12), updatedAt: daysAgo(7, 10), acceptedAt: null, resolvedAt: null,
+    decision: { type: 'denied', reason: 'Paid invoices are statutory billing records and cannot be deleted. We can add a credit note if the charge is incorrect.', by: 'usr-owner', at: daysAgo(7, 10) }, reapplyCount: 0, resolution: null,
+    messages: [
+      { id: 'sm-4', authorId: 'usr-sana', authorName: 'Sana Kapoor', authorRole: 'Organization Admin', side: 'org', at: daysAgo(8, 12), text: 'Please remove invoice HAP-INV-2604-118 from our history.', images: [] },
+    ],
+  },
+  {
+    id: 'sup-3', ticketNo: null, organizationId: 'org-pika',
+    subject: 'Need help moving one booth to a replacement tablet', category: 'account', priority: 'medium', status: 'new',
+    createdBy: 'usr-arpita', createdAt: daysAgo(0, 8, 35), updatedAt: daysAgo(0, 10, 0), acceptedAt: null, resolvedAt: null,
+    decision: null,
+    decisionHistory: [{ type: 'denied', reason: 'Please provide the old device UUID so we can preserve the correct booth history.', by: 'usr-sm', at: daysAgo(0, 9, 15) }],
+    reapplyCount: 1,
+    lastReapplication: { id: 'sm-5b', authorId: 'usr-arpita', authorName: 'Arpita Shah', authorRole: 'Organization Admin', side: 'org', at: daysAgo(0, 10, 0), text: 'Re-applying with the damaged tablet UUID: e5f6a7b8-c9d0-4e1f-a2b3-c4d5e6f7a8b9. Please preserve its event and payment history.', images: [] },
+    resolution: null,
+    messages: [
+      { id: 'sm-5', authorId: 'usr-arpita', authorName: 'Arpita Shah', authorRole: 'Organization Admin', side: 'org', at: daysAgo(0, 8, 35), text: 'Our studio tablet was damaged. Please guide us so the paired booth and event history are not lost.', images: [] },
+      { id: 'sm-5b', authorId: 'usr-arpita', authorName: 'Arpita Shah', authorRole: 'Organization Admin', side: 'org', at: daysAgo(0, 10, 0), text: 'Re-applying with the damaged tablet UUID: e5f6a7b8-c9d0-4e1f-a2b3-c4d5e6f7a8b9. Please preserve its event and payment history.', images: [] },
+    ],
+  },
+  {
+    id: 'sup-4', ticketNo: 'HPX-2609-0002', organizationId: 'org-tech',
+    subject: 'Clarification on wallet settlement timing', category: 'billing', priority: 'medium', status: 'resolved',
+    createdBy: 'usr-vikram', createdAt: daysAgo(12, 11), updatedAt: daysAgo(10, 16), acceptedAt: daysAgo(12, 13), resolvedAt: daysAgo(10, 16),
+    decision: { type: 'accepted', reason: null, by: 'usr-pa', at: daysAgo(12, 13) }, reapplyCount: 0,
+    resolution: 'Wallet settlement schedule and direct-UPI option explained; no account change was required.',
+    messages: [
+      { id: 'sm-6', authorId: 'usr-vikram', authorName: 'Vikram Sethi', authorRole: 'Organization Admin', side: 'org', at: daysAgo(12, 11), text: 'How long does a wallet withdrawal normally take?', images: [] },
+      { id: 'sm-7', authorId: 'usr-pa', authorName: 'Priya Nair', authorRole: 'Platform Admin', side: 'platform', at: daysAgo(12, 13), text: 'Accepted. Standard withdrawals are processed to the saved UPI ID within one business day.', images: [] },
+      { id: 'sm-8', authorId: 'usr-pa', authorName: 'Priya Nair', authorRole: 'Platform Admin', side: 'platform', at: daysAgo(10, 16), text: 'Marking this resolved after confirming the payout options with Vikram.', images: [] },
+    ],
+  },
+]
+
 // ---------------- Audit logs ----------------
 let AUDIT_SEQ = 0
 const A = (at, actorId, action, entity, summary, ip, severity = 'info') => ({
@@ -471,11 +554,22 @@ function seedDb() {
     users: USERS,
     organizations: ORGS,
     subscriptions: SUBSCRIPTIONS,
-    devices: DEVICES,
-    events: EVENTS,
+    planCatalog: PLAN_CATALOG,
+    devices: DEVICES.map((device) => ({
+      ...device,
+      connections: { ...(DEVICE_CONNECTIONS[device.id] || { camera: false, printer: false, kioskScreen: false, updatedAt: device.lastSeenAt }) },
+    })),
+    // Existing seed events also carry the effective price snapshot they would
+    // have received at creation time.
+    events: EVENTS.map((event) => ({
+      ...event,
+      layoutPrices: { ...(ORG_DEFAULTS[event.organizationId]?.layoutPrices || suggestedPriceMap()) },
+    })),
     orgDefaults: ORG_DEFAULTS,
     coupons: COUPONS,
     tickets: TICKETS,
+    platformSupport: PLATFORM_SUPPORT,
+    supportTicketSeq: 2,
     payments: buildPayments(),
     audit: AUDIT,
     withdrawals: WITHDRAWALS, // wallet → org UPI payouts

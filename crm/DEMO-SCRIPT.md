@@ -15,12 +15,14 @@ restores the seed at any point.
 3. **Organizations** — open **Glow Events** (banned): red banner shows the fraud reason + audit
    entry. Click **Restore**, then **Suspend** Riya Studio *without* a reason → error
    "reason is required". With a reason → audit-logged.
-4. **Templates & Frames** — Frames section: click **Remove** on *Emerald Luxe* (disabled at
-   every org → succeeds). Click **Remove** on *Mono Studio* → **409 "enabled at 1
-   organization — disable it in their defaults first"**. That's the guard.
+4. **Subscription Plans** — edit a plan's price/device/event limits, then add a new plan.
+5. **Team & Roles** — existing teammates have no Edit action; the Owner can only deactivate
+   or re-activate them. New Platform Admin / Support Manager accounts can still be created.
+6. **Organization Support** — use **New requests** to accept one into a numbered ticket or deny
+   it with a reason visible to the organization.
 
 > Talking point: statuses are *computed* (trial / active / expiring soon / expired / suspended /
-> banned) — nobody edits a status field. Only the Owner may add/remove frames.
+> banned), while the Owner controls the plan catalogue and account activation.
 
 ### 2 · Platform Admin — same console, less power (20 s) → `priya@happypix.com`
 
@@ -42,34 +44,34 @@ restores the seed at any point.
    guest tickets, usage bars 2/10 devices.
 2. **Events & Devices**
    - Events tab: the live wedding (customisation chips: 2 filters · 2 templates), pause it →
-     **Paused** chip; resume. **No price column, no passkey anywhere on the screen.**
-   - Devices tab: 2 booths with UUIDs, online dots, last seen.
+     **Paused** chip; resume. There is no passkey; layout prices are edited inside the event editor.
+   - Devices tab: booths with UUIDs, online dots and compact hardware-health tiles — camera,
+     printer and external kiosk screen each show a green tick or red cross from the latest heartbeat.
    - Assignments tab: move a booth from the wedding to the 24 Sep event.
-   - **Create event** — three sections, zero prices:
+   - **Create event** — four sections:
      ① *General*: name, client/host, location, start, end, digital-copy toggle on.
-     ② *Customisation*: tick filters (*Warm*, *B&W*) and pick templates (*4x6 Grid 6* +
-     *Strip 3*) from all available platform templates — each shown as a mini print preview.
-     ③ *Branding*: leave the logo as *none* (or upload one — it lands in the print footer)
-     and set the tagline. A live output preview shows the frame + footer.
-     Create → it appears as *Upcoming*.
+     ② *Customisation*: tick filters (*Warm*, *B&W*) and pick templates from the platform
+     library — each shown as a mini print preview.
+     ③ *Event print pricing*: prices begin with Organization Defaults; override one value.
+     ④ *Branding*: upload optional sponsor/host logos and set the tagline.
+     Create → it appears as *Upcoming* with its own saved price snapshot.
 3. **Org Revenue** (Admin-only) — per-event and per-booth earnings, payment donut.
-4. **Support** — open *Printer jammed during wedding* → reply → **Mark resolved (with note)**.
-   Open the payment ticket → **Reopen**.
-5. **Coupon Management** — VIP50 is *exhausted* (0 left, red bar). Create
+4. **HappyPix Support** — raise an organization-level issue and attach a screenshot. Open the
+   denied seed request to see its reason and the text-required **Re-apply** action.
+5. **Guest Support** — open *Printer jammed during wedding* → reply → **Mark resolved**.
+6. **Coupon Management** — VIP50 is *exhausted* (0 left, red bar). Create
    `ANNIVERSARY25` — 25 % off, 40 uses, 30 days, tied to one event. Pause it → chip flips.
-6. **Organization Defaults** — the *only* pricing surface in the CRM: every platform frame
-   rendered as a real print preview, each with a price input and an *Available on booth*
-   toggle. Bump *Royal Black* ₹60 → ₹80, switch *Festive Maroon* off at the booths; set the
-   idle timeout 600 → 120 s (the "≈ 2 min" hint updates). Save → persisted.
+7. **Organization Defaults** — the baseline layout-price map plus booth/payment settings.
+   Change a default and set the idle timeout 600 → 120 s. Existing event snapshots remain
+   unchanged; newly created events begin from the new default.
 
-> Talking point: coupons are private (booth shows only an "Enter Coupon" field). A frame is
-> the canvas a print is made on — the complete output print is on the frame — and frame
-> prices + booth availability live **only** here, never on events.
+> Talking point: coupons are private (the booth shows only an "Enter Coupon" field), and
+> event-specific layout prices are always validated and saved server-side.
 
 ### 4 · Org Manager — the constrained seat (20 s) → `rohit@sunsetweddings.com`
 
-- Sidebar: Dashboard, Events & Devices, Support, Defaults (read-only), Profile. **No** Revenue,
-  Coupons, Org Audit, Team.
+- Sidebar includes Dashboard, Events & Devices, Team (read-only), HappyPix Support,
+  Guest Support, Defaults (read-only), and Profile. **No** Revenue or Coupons.
 - **Events & Devices** — full operational access: can create events, pause/resume, assign booths.
 - **Organization Defaults** — every input disabled (frame price fields, booth toggles,
   timeout), no Save button, read-only banner.
@@ -77,8 +79,9 @@ restores the seed at any point.
 
 ### 5 · Support Manager — platform eyes, no platform hands (10 s) → `support@happypix.com`
 
-- Platform Dashboard + Organizations (read) only. No Revenue, no Templates, no Team, no Audit.
-- Demonstrates the third platform role exists but is intentionally narrow.
+- Platform Dashboard + Organizations (read) + Organization Support. No Revenue, Plans,
+  Templates, Team, or Audit.
+- Accept/deny organization requests, chat with images, resolve and reopen tickets.
 
 ---
 
@@ -94,7 +97,6 @@ restores the seed at any point.
 
 ### One-liner for the room
 
-> "Five fixed roles, thirteen screens, one matrix enforced in the sidebar, the router and the
-> API — booths are UUID devices, not users, events carry no price (the frame is the print
-> canvas and only Organization Defaults hold prices), and every plan limit, coupon and
-> suspend/ban is decided server-side."
+> "Five fixed roles, one permission matrix enforced in the sidebar, router and API; booths are
+> UUID devices, event prices inherit defaults but can be safely overridden, and every plan,
+> support workflow, coupon and suspend/ban decision is enforced server-side."

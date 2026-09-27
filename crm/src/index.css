@@ -293,7 +293,7 @@ table.hp-table { width: 100%; border-collapse: collapse; font-size: 13px; }
 /* ---------- Modal / Drawer ---------- */
 .overlay {
   position: fixed; inset: 0; background: var(--overlay);
-  backdrop-filter: blur(2px); z-index: 90;
+  backdrop-filter: blur(2px); z-index: 100;
   animation: fade-in 0.15s ease;
   display: flex; align-items: flex-start; justify-content: center; overflow-y: auto;
   padding: 6vh 16px 16px;
@@ -301,10 +301,10 @@ table.hp-table { width: 100%; border-collapse: collapse; font-size: 13px; }
 .modal {
   background: var(--surface); border-radius: var(--r-lg); box-shadow: var(--sh-lg);
   width: 100%; max-width: 520px; animation: pop-in 0.18s ease;
-  display: flex; flex-direction: column; max-height: 88vh;
+  display: flex; flex-direction: column; max-height: 88vh; z-index: 105;
 }
-.modal.wide { max-width: 680px; }
-.modal.xwide { max-width: 860px; }
+.modal.wide { max-width: 680px; z-index: 105; }
+.modal.xwide { max-width: 860px; z-index: 105; }
 .modal-head { padding: 18px 22px 0; display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; }
 .modal-title { font-size: 16px; font-weight: 680; }
 .modal-sub { font-size: 12.5px; color: var(--muted); margin-top: 3px; }
@@ -495,6 +495,24 @@ table.hp-table { width: 100%; border-collapse: collapse; font-size: 13px; }
 }
 .frame-tile.selected { border-color: var(--hp-pink); box-shadow: 0 0 0 3px rgba(234, 9, 127, 0.14); }
 
+/* Subscription plan catalogue */
+.plan-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 14px; }
+.form-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; }
+
+/* Platform support request review + shared ticket thread */
+.support-review-grid { display: grid; grid-template-columns: minmax(210px, .72fr) minmax(0, 1.6fr); gap: 18px; }
+.support-review-list { border: 1px solid var(--line); border-radius: var(--r-md); overflow: hidden; align-self: start; max-height: 530px; overflow-y: auto; }
+.support-review-list button { display: block; width: 100%; padding: 11px 12px; border: none; border-bottom: 1px solid var(--line-soft); background: var(--surface); color: var(--ink); text-align: left; cursor: pointer; }
+.support-review-list button:last-child { border-bottom: none; }
+.support-review-list button:hover { background: var(--surface-2); }
+.support-review-list button.active { background: var(--hp-pink-soft); box-shadow: inset 3px 0 var(--hp-pink); }
+.support-images { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 6px; }
+.support-images img { width: 112px; height: 84px; object-fit: cover; border-radius: 8px; border: 1px solid var(--line); background: var(--surface-2); }
+.support-compose-images { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 8px; }
+.support-compose-images > span { position: relative; display: inline-flex; }
+.support-compose-images img { width: 62px; height: 48px; object-fit: cover; border: 1px solid var(--line); border-radius: 7px; }
+.support-compose-images button { position: absolute; right: -5px; top: -5px; width: 18px; height: 18px; display: grid; place-items: center; border: none; border-radius: 50%; background: var(--danger); color: #fff; cursor: pointer; }
+
 /* ticket thread */
 .thread-msg { display: flex; gap: 10px; margin-bottom: 14px; }
 .thread-bubble {
@@ -540,8 +558,23 @@ table.hp-table { width: 100%; border-collapse: collapse; font-size: 13px; }
 .theme-seg button.on { background: var(--surface); color: var(--hp-pink-deep); box-shadow: var(--sh-sm); }
 html[data-theme="dark"] .theme-seg button.on { background: var(--line); color: var(--hp-pink-deep); }
 
-/* ---------- Device telemetry (hardware column) ---------- */
-.tel { display: flex; flex-direction: column; gap: 4px; min-width: 128px; }
+/* ---------- Device telemetry (hardware health column) ---------- */
+.tel { display: flex; flex-direction: column; gap: 4px; min-width: 168px; }
+.hw-health { display: flex; align-items: flex-start; gap: 7px; margin-bottom: 5px; }
+.hw-health-item { display: inline-flex; flex-direction: column; align-items: center; gap: 3px; font-size: 9.5px; font-weight: 650; color: var(--faint); }
+.hw-connection {
+  position: relative; width: 36px; height: 32px; border-radius: 9px; border: 1.5px solid;
+  display: inline-flex; align-items: center; justify-content: center; background: var(--surface);
+}
+.hw-connection.connected { color: var(--hp-green-ink); border-color: var(--hp-green); background: var(--hp-green-soft); }
+.hw-connection.disconnected { color: var(--danger); border-color: var(--danger); background: var(--danger-soft); }
+.hw-connection-mark {
+  position: absolute; right: -5px; top: -5px; width: 15px; height: 15px; border-radius: 50%;
+  display: inline-flex; align-items: center; justify-content: center; color: #fff;
+  border: 2px solid var(--surface);
+}
+.hw-connection.connected .hw-connection-mark { background: var(--hp-green); }
+.hw-connection.disconnected .hw-connection-mark { background: var(--danger); }
 .tel-row { display: flex; align-items: center; gap: 7px; font-size: 12px; color: var(--muted); line-height: 1.35; }
 .tel-row svg { color: var(--faint); flex: none; }
 .tel-row b { color: var(--ink); font-weight: 650; font-variant-numeric: tabular-nums; }
@@ -567,4 +600,8 @@ html[data-theme="dark"] .theme-seg button.on { background: var(--line); color: v
 }
 
 /* Revenue: wallet + settlement side-by-side, stacks on narrow screens */
-@media (max-width: 860px) { .wallet-grid { grid-template-columns: 1fr !important; } }
+@media (max-width: 860px) {
+  .wallet-grid { grid-template-columns: 1fr !important; }
+  .support-review-grid, .form-grid-2 { grid-template-columns: 1fr; }
+  .support-review-list { max-height: 190px; }
+}

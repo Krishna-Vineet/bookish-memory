@@ -82,8 +82,8 @@ export default function Support() {
     <div>
       <div className="page-head">
         <div>
-          <div className="page-title">Support</div>
-          <div className="page-sub">Guest issues raised from your booths and download pages.</div>
+          <div className="page-title">Guest Support</div>
+          <div className="page-sub">Guest issues raised from your booths and download pages. Organization-to-HappyPix requests live in HappyPix Support.</div>
         </div>
       </div>
 

@@ -50,12 +50,15 @@ const MARKERS = {
   '/platform/dashboard': ['Platform Dashboard', 'Expiring plans & trials'],
   '/platform/revenue': ['Platform Revenue', 'Organization revenue'],
   '/platform/organizations': ['Organizations', 'Sunset Weddings'],
+  '/platform/support': ['Organization Support', 'Booth sync intermittently', 'Accepted tickets'],
+  '/platform/plans': ['Subscription Plans', 'Business', 'Add plan'],
   '/platform/templates': ['Template Library', 'Royal Wedding', 'Classic White', 'New template'],
   '/platform/team': ['Team & Roles', 'Internal team', 'Fixed role model'],
   '/platform/audit': ['Audit & Logs'],
   '/org/dashboard': ['Sunset Weddings', 'Booths online', 'Plan usage'],
   '/org/revenue': ['Organization Revenue', 'Revenue by event'],
   '/org/events': ['Events & Devices', 'Create event', 'Customisation'],
+  '/org/platform-support': ['HappyPix Support', 'Booth sync intermittently', 'Raise an issue'],
   '/org/support': ['Support', 'Printer jammed'],
   '/org/team': ['Team & Roles', 'Organization team', 'Sana Kapoor', 'Rohit Das', 'Fixed role model'],
   '/org/defaults': ['Organization Defaults', 'Booth behaviour', 'Layouts & print pricing', 'Pocket Polaroid'],
@@ -64,11 +67,11 @@ const MARKERS = {
 }
 
 const CASES = [
-  { email: 'owner@happypix.com', routes: ['/platform/dashboard', '/platform/revenue', '/platform/organizations', '/platform/templates', '/platform/team', '/platform/audit', '/profile'] },
-  { email: 'priya@happypix.com', routes: ['/platform/dashboard', '/platform/organizations', '/platform/templates', '/platform/team', '/profile'], forbidden: { path: '/platform/revenue', to: '/platform/dashboard' } },
-  { email: 'support@happypix.com', routes: ['/platform/dashboard', '/platform/organizations', '/profile'], forbidden: { path: '/platform/templates', to: '/platform/dashboard' } },
-  { email: 'sana@sunsetweddings.com', routes: ['/org/dashboard', '/org/revenue', '/org/events', '/org/team', '/org/support', '/org/defaults', '/org/coupons', '/profile'] },
-  { email: 'rohit@sunsetweddings.com', routes: ['/org/dashboard', '/org/events', '/org/team', '/org/support', '/org/defaults', '/profile'], forbidden: { path: '/org/revenue', to: '/org/dashboard' } },
+  { email: 'owner@happypix.com', routes: ['/platform/dashboard', '/platform/revenue', '/platform/organizations', '/platform/support', '/platform/plans', '/platform/templates', '/platform/team', '/platform/audit', '/profile'] },
+  { email: 'priya@happypix.com', routes: ['/platform/dashboard', '/platform/organizations', '/platform/support', '/platform/templates', '/platform/team', '/profile'], forbidden: { path: '/platform/plans', to: '/platform/dashboard' } },
+  { email: 'support@happypix.com', routes: ['/platform/dashboard', '/platform/organizations', '/platform/support', '/profile'], forbidden: { path: '/platform/templates', to: '/platform/dashboard' } },
+  { email: 'sana@sunsetweddings.com', routes: ['/org/dashboard', '/org/revenue', '/org/events', '/org/team', '/org/platform-support', '/org/support', '/org/defaults', '/org/coupons', '/profile'] },
+  { email: 'rohit@sunsetweddings.com', routes: ['/org/dashboard', '/org/events', '/org/team', '/org/platform-support', '/org/support', '/org/defaults', '/profile'], forbidden: { path: '/org/revenue', to: '/org/dashboard' } },
 ]
 
 let pass = 0
