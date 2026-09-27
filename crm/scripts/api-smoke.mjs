@@ -157,7 +157,7 @@ check('platform admin on org events → 403 (org scope)', call('GET', '/api/org/
 // ---------------- Devices: rename + booth operator (v2.1) ----------------
 r = call('GET', '/api/org/devices', null, rohit)
 const devId = r.data?.devices?.[0]?.id
-check('GET devices (org manager) → 200 with operator + telemetry fields', r.status === 200 && r.data.devices.every((d) => 'operatorName' in d && 'telemetry' in d))
+check('GET devices (org manager) → 200 with operator, telemetry + connection health', r.status === 200 && r.data.devices.every((d) => 'operatorName' in d && 'telemetry' in d && typeof d.connections?.camera === 'boolean' && typeof d.connections?.printer === 'boolean' && typeof d.connections?.kioskScreen === 'boolean'))
 
 r = call('PUT', `/api/org/devices/${devId}`, { deviceName: 'Booth 01 — Renamed', operatorName: 'Ramesh Test', operatorPhone: '+91 90000 00000' }, rohit)
 check('PUT device rename + operator (org manager) → 200', r.status === 200 && r.data?.device?.deviceName === 'Booth 01 — Renamed' && r.data?.device?.operatorName === 'Ramesh Test')
@@ -168,11 +168,16 @@ check('PUT device operator cleared by org admin → 200', r.status === 200 && r.
 
 // ---------------- Booth telemetry push (v2.1) ----------------
 const dev = call('GET', '/api/org/devices', null, sana).data.devices[0]
-r = call('POST', `/api/booth/devices/${dev.deviceUuid}/telemetry`, { printsTotal: 999, shutterCount: 2001, batteryPct: 55 }, null)
-check('POST booth telemetry (public, uuid) → 200', r.status === 200 && r.data?.telemetry?.prints === 999 && r.data?.telemetry?.batteryPct === 55)
+r = call('POST', `/api/booth/devices/${dev.deviceUuid}/telemetry`, {
+  printsTotal: 999, shutterCount: 2001, batteryPct: 55,
+  connections: { camera: true, printer: false, kioskScreen: true },
+}, null)
+check('POST booth telemetry (public, uuid) → 200 with peripheral health', r.status === 200 && r.data?.telemetry?.prints === 999 && r.data?.telemetry?.batteryPct === 55 && r.data?.connections?.camera === true && r.data?.connections?.printer === false && r.data?.connections?.kioskScreen === true)
+check('POST booth telemetry rejects non-boolean connection state', call('POST', `/api/booth/devices/${dev.deviceUuid}/telemetry`, { connections: { camera: 'yes' } }, null).status === 400)
 check('POST booth telemetry unknown uuid → 404', call('POST', '/api/booth/devices/nope/telemetry', { printsTotal: 1 }, null).status === 404)
 r = call('GET', '/api/org/devices', null, sana)
-check('telemetry visible to CRM via org devices', r.data?.devices?.find((d) => d.id === dev.id)?.telemetry?.prints === 999)
+const reportedDevice = r.data?.devices?.find((d) => d.id === dev.id)
+check('telemetry + connection health visible to CRM via org devices', reportedDevice?.telemetry?.prints === 999 && reportedDevice?.connections?.camera === true && reportedDevice?.connections?.printer === false && reportedDevice?.connections?.kioskScreen === true)
 
 // ---------------- Forgot / reset password (OTP-style, v2.1) ----------------
 r = call('POST', '/api/auth/forgot-password', { email: 'rohit@sunsetweddings.com' }, null)
@@ -326,6 +331,7 @@ check('Organization sees platform denial reason', call('GET', `/api/org/platform
 check('Denied request re-apply requires text', call('POST', `/api/org/platform-support/${supportId}/reapply`, { message: '' }, sana).status === 400)
 r = call('POST', `/api/org/platform-support/${supportId}/reapply`, { message: 'Affected booth UUID is f47ac10b-58cc-4372-a567-0e02b2c3d471.' }, sana)
 check('Organization can re-apply denied request', r.status === 200 && r.data?.request?.status === 'new' && r.data?.request?.reapplyCount === 1)
+check('Re-application reason is explicit for platform review', r.data?.request?.lastReapplication?.text.includes('f47ac10b') && call('GET', `/api/platform/support/${supportId}`, null, owner).data?.request?.lastReapplication?.text.includes('f47ac10b'))
 r = call('POST', `/api/platform/support/${supportId}/accept`, { message: 'Accepted after receiving the booth UUID.' }, owner)
 check('Platform accepts request and creates ticket number', r.status === 200 && r.data?.request?.status === 'open' && /^HPX-\d{4}-\d{4}$/.test(r.data?.request?.ticketNo || ''))
 r = call('POST', `/api/org/platform-support/${supportId}/reply`, { message: 'Here is another screenshot.', images: [tinyImage] }, rohit2)

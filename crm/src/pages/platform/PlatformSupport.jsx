@@ -139,13 +139,18 @@ export default function PlatformSupport() {
           <div className="page-title">Organization Support</div>
           <div className="page-sub">Review organization requests, turn accepted requests into tickets, and work together in a shared image-enabled conversation.</div>
         </div>
-        <Button variant={pending.length ? 'primary' : 'outline'} icon="mail" onClick={() => setReviewOpen(true)} disabled={!data}>
-          New requests {data ? `· ${pending.length}` : ''}
-        </Button>
       </div>
 
       {pending.length ? (
-        <WarnBanner tone="pink" icon="bell" action={<Button size="sm" variant="primary" onClick={() => setReviewOpen(true)}>Review now</Button>}>
+        <WarnBanner
+          tone="pink"
+          icon="bell"
+          action={
+            <Button size="sm" variant="primary" icon="mail" onClick={() => setReviewOpen(true)}>
+              Review now · {pending.length}
+            </Button>
+          }
+        >
           <b>{pending.length} request{pending.length === 1 ? '' : 's'} awaiting review.</b> Accept to create a ticket, or deny with a reason the organization can act on.
         </WarnBanner>
       ) : null}
@@ -190,10 +195,28 @@ export default function PlatformSupport() {
                   <SupportMeta request={review} />
                   <h3 style={{ fontSize: 17, margin: '14px 0 4px' }}>{review.subject}</h3>
                   <div className="t12 muted">{review.organization?.name} · raised by {review.creator?.name} · {dateMed(review.createdAt)}</div>
-                  <div className="card card-pad mt-16" style={{ boxShadow: 'none', background: 'var(--surface-2)' }}>
+                  <div className="t11 fw7 faint mt-16" style={{ letterSpacing: '.07em', textTransform: 'uppercase' }}>Original request</div>
+                  <div className="card card-pad mt-8" style={{ boxShadow: 'none', background: 'var(--surface-2)' }}>
                     <SupportThread request={{ ...review, messages: review.messages.slice(0, 1) }} mineSide="platform" />
                   </div>
-                  {review.reapplyCount ? <Chip tone="warn" style={{ marginTop: 10 }}>Re-applied {review.reapplyCount} time{review.reapplyCount === 1 ? '' : 's'}</Chip> : null}
+                  {review.reapplyCount && review.lastReapplication ? (
+                    <div className="mt-16">
+                      <WarnBanner tone="info" icon="refresh">
+                        <b>Re-application reason</b>
+                        <div className="t11" style={{ marginTop: 3, fontWeight: 450 }}>
+                          Re-applied {review.reapplyCount} time{review.reapplyCount === 1 ? '' : 's'} · latest response shown below
+                        </div>
+                      </WarnBanner>
+                      <div className="card card-pad mt-8" style={{ boxShadow: 'none', borderColor: 'rgba(56,113,193,.25)' }}>
+                        <SupportThread request={{ ...review, messages: [review.lastReapplication] }} mineSide="platform" />
+                      </div>
+                    </div>
+                  ) : review.reapplyCount ? (
+                    <div className="card card-pad mt-16" style={{ boxShadow: 'none', borderColor: 'rgba(56,113,193,.25)' }}>
+                      <div className="t12 fw7" style={{ color: 'var(--hp-blue)', marginBottom: 10 }}>Re-application reason</div>
+                      <SupportThread request={{ ...review, messages: review.messages.slice(-1) }} mineSide="platform" />
+                    </div>
+                  ) : null}
                   <div className="mt-16" style={{ borderTop: '1px solid var(--line-soft)', paddingTop: 14 }}>
                     <Field label="Reason required when denying" hint="The organization sees this text and may re-apply with a new message.">
                       <TextArea value={denyReason} onChange={(e) => setDenyReason(e.target.value)} placeholder="Explain why this request is being denied…" />

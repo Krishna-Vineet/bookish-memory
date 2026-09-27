@@ -11,7 +11,7 @@ charts and layout are hand-rolled SVG/CSS so the app works in fully offline prev
 npm install
 npm run dev        # http://localhost:5173
 npm run build      # production bundle in dist/
-node scripts/api-smoke.mjs    # API contract test (157 assertions)
+node scripts/api-smoke.mjs    # API contract test (159 assertions)
 node scripts/render-test.mjs  # role × screen render test (38 cases)
 ```
 
@@ -90,6 +90,8 @@ UUID-paired devices, never users.
   never count); device registration is capped; expired/suspended/banned orgs cannot create
   events or register devices. The **Owner** can view, edit, hide and add plans in the
   Subscription Plans catalogue; edited limits are enforced for subscribed organizations.
+- **Device hardware health** shows the latest camera, printer and external kiosk-screen
+  connection state as green-tick / red-cross icon tiles, alongside print/shutter/battery telemetry.
 - **Suspend/ban with mandatory reason**, full restore path, every action audit-logged.
 - **Coupons**: org-owned, quantity-limited, expiry-checked, pausable, event-scoped or
   global; the booth only ever shows an "Enter Coupon" field.

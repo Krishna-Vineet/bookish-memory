@@ -45,7 +45,8 @@ restores the seed at any point.
 2. **Events & Devices**
    - Events tab: the live wedding (customisation chips: 2 filters · 2 templates), pause it →
      **Paused** chip; resume. There is no passkey; layout prices are edited inside the event editor.
-   - Devices tab: 2 booths with UUIDs, online dots, last seen.
+   - Devices tab: booths with UUIDs, online dots and compact hardware-health tiles — camera,
+     printer and external kiosk screen each show a green tick or red cross from the latest heartbeat.
    - Assignments tab: move a booth from the wedding to the 24 Sep event.
    - **Create event** — four sections:
      ① *General*: name, client/host, location, start, end, digital-copy toggle on.

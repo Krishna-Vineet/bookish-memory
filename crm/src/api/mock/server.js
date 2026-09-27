@@ -591,8 +591,10 @@ export function handle(method, path, body, token) {
   if (p === 'booth') {
     if (p2 === 'devices' && p3 && parts[3] === 'telemetry' && method === 'POST') {
       // Hardware heartbeat from the booth app:
-      //   { printsTotal, shutterCount, batteryPct }
-      // The CRM reads this back through GET /org/devices (Hardware column).
+      //   { printsTotal, shutterCount, batteryPct,
+      //     connections: { camera, printer, kioskScreen } }
+      // The CRM reads stats and peripheral connection health through
+      // GET /org/devices (Hardware health column).
       const d = db.devices.find((x) => x.deviceUuid === p3)
       if (!d) throw new ApiError(404, 'Device not found.')
       const clampInt = (v, min, max) => Math.max(min, Math.min(max, Math.round(Number(v) || 0)))
@@ -603,10 +605,27 @@ export function handle(method, path, body, token) {
         batteryPct: body && body.batteryPct != null ? clampInt(body.batteryPct, 0, 100) : prev.batteryPct ?? null,
         updatedAt: NOW().toISOString(),
       }
+      const reported = body && body.connections
+      if (reported != null && (typeof reported !== 'object' || Array.isArray(reported))) {
+        throw new ApiError(400, 'connections must contain camera, printer and kioskScreen booleans.')
+      }
+      for (const key of ['camera', 'printer', 'kioskScreen']) {
+        if (reported && reported[key] !== undefined && typeof reported[key] !== 'boolean') {
+          throw new ApiError(400, `connections.${key} must be true or false.`)
+        }
+      }
+      const previousConnections = d.connections || {}
+      const connections = {
+        camera: reported?.camera ?? previousConnections.camera ?? false,
+        printer: reported?.printer ?? previousConnections.printer ?? false,
+        kioskScreen: reported?.kioskScreen ?? previousConnections.kioskScreen ?? false,
+        updatedAt: tel.updatedAt,
+      }
       d.telemetry = tel
+      d.connections = connections
       d.lastSeenAt = tel.updatedAt
       persist()
-      return { status: 200, data: { ok: true, telemetry: tel } }
+      return { status: 200, data: { ok: true, telemetry: tel, connections } }
     }
     if (p2 === 'tickets' && !p3 && method === 'POST') {
       // Guest support ticket raised by the booth app at session end / after
@@ -1139,7 +1158,7 @@ export function handle(method, path, body, token) {
           subject, category, priority, status: 'new', createdBy: u.id,
           createdAt: NOW().toISOString(), updatedAt: NOW().toISOString(),
           acceptedAt: null, resolvedAt: null, decision: null, decisionHistory: [],
-          reapplyCount: 0, resolution: null, messages: [],
+          reapplyCount: 0, lastReapplication: null, resolution: null, messages: [],
         }
         supportMessage(db, ticket, u, 'org', body || {}, { requireText: true })
         db.platformSupport.unshift(ticket)
@@ -1152,12 +1171,15 @@ export function handle(method, path, body, token) {
       if (p3 && !parts[3] && method === 'GET') return { status: 200, data: { request: supportView(db, ticket) } }
       if (p3 && parts[3] === 'reapply' && method === 'POST') {
         if (ticket.status !== 'denied') throw new ApiError(409, 'Only a denied request can be re-applied.')
-        supportMessage(db, ticket, u, 'org', body || {}, { requireText: true })
+        const reapplication = supportMessage(db, ticket, u, 'org', body || {}, { requireText: true })
         ticket.decisionHistory = [...(ticket.decisionHistory || []), ticket.decision].filter(Boolean)
         ticket.decision = null
         ticket.status = 'new'
         ticket.ticketNo = null
         ticket.reapplyCount = Number(ticket.reapplyCount || 0) + 1
+        // Keep the latest re-application reason explicit so the platform
+        // review inbox does not hide it behind the original request message.
+        ticket.lastReapplication = { ...reapplication }
         ticket.resolution = null
         logAudit(db, { actorId: u.id, action: 'organization.platform_support.reapplied', entity: 'support_request', summary: `Re-applied platform support request “${ticket.subject}”`, organizationId: orgId })
         persist()

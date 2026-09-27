@@ -428,16 +428,19 @@ PUT /api/org/devices/:id   { deviceName?, operatorName?, operatorPhone? }
 
 ### 4.3 Hardware telemetry — booth push route (public, device-scoped)
 ```
-POST /api/booth/devices/:deviceUuid/telemetry   { printsTotal, shutterCount, batteryPct }
-  → 200 { ok, telemetry }
+POST /api/booth/devices/:deviceUuid/telemetry
+  { printsTotal, shutterCount, batteryPct,
+    connections: { camera: boolean, printer: boolean, kioskScreen: boolean } }
+  → 200 { ok, telemetry, connections }
 ```
 - Authenticated by the **device UUID** (booth apps are not CRM users).
 - The booth pushes periodically (heartbeat cadence); the server clamps values
   (counts ≥ 0, battery 0–100) and stamps `updatedAt`, refreshing `lastSeenAt`.
-- The CRM **reads** the stored `telemetry { prints, shutters, batteryPct, updatedAt }`
-  through `GET /api/org/devices` — it never computes it. Suggested Mongo shape: a
-  `deviceTelemetry` sub-document on `Device` plus an append-only `telemetryHistory`
-  collection if per-day rollups are wanted later.
+- The CRM **reads** stored `telemetry { prints, shutters, batteryPct, updatedAt }` and
+  `connections { camera, printer, kioskScreen, updatedAt }` through `GET /api/org/devices`.
+  It renders all three peripherals as green-tick / red-cross icon tiles and never computes
+  or writes their state. Suggested Mongo shape: latest telemetry/connection sub-documents
+  on `Device` plus an append-only history collection if per-day rollups are wanted later.
 
 ### 4.4 Support tickets created by the booth app — session context
 ```
@@ -677,6 +680,7 @@ client constant.
     "text": "string", "images": ["https://cdn/... or data:image in demo"]
   }],
   "reapplyCount": 0,
+  "lastReapplication": { "text": "string", "images": [], "authorId": "userId", "at": "ISO" },
   "resolution": "string | null",
   "acceptedAt": "ISO | null",
   "resolvedAt": "ISO | null",
@@ -703,8 +707,9 @@ Platform routes:
 Organization routes (always tenant-scoped):
 - `GET /api/org/platform-support` / `GET /api/org/platform-support/:id`
 - `POST /api/org/platform-support { subject, category, priority, message, images? }`
-- `POST /api/org/platform-support/:id/reapply { message }` — denied only, text required,
-  returns to `new` review state
+- `POST /api/org/platform-support/:id/reapply { message, images? }` — denied only, text required,
+  returns to `new` review state and stores the response as `lastReapplication` so the platform
+  review inbox shows the reason separately from the original request
 - `POST /api/org/platform-support/:id/reply { message?, images? }` — accepted active tickets only
 
 Organization routes intentionally have no resolve or reopen operation. A resolved ticket is
@@ -731,4 +736,4 @@ The booth must charge from the assigned event snapshot, never from a client-comp
 updates retain unmentioned snapshot entries. Coupons remain server-computed after selecting the
 event layout price.
 
-New mock seed shape → `DB_VERSION = 8`.
+New mock seed shape → `DB_VERSION = 9`.

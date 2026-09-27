@@ -8,7 +8,7 @@ import { suggestedPriceMap } from '../../lib/layouts.js'
 import { DESIGNER_TEMPLATES, AI_SEED_TEMPLATES, PLAYGROUND_SEED_TEMPLATES } from '../../lib/templateMeta.js'
 
 const DB_KEY = 'happypix_crm_v2_db'
-const DB_VERSION = 8
+const DB_VERSION = 9
 
 function mulberry32(a) {
   return function () {
@@ -150,9 +150,9 @@ const PLAN_CATALOG = [
 // ---------------- Devices (UUID pairing model) ----------------
 // operatorName/operatorPhone — the on-ground booth operator assigned by an
 // org admin/manager so the rest of the team knows who to contact.
-// telemetry — hardware stats the booth app pushes (prints made by the
-// printer, shutter count of the camera, camera battery %) via
-// POST /api/booth/devices/:uuid/telemetry; the CRM only reads it.
+// telemetry + connections — hardware stats and camera/printer/external-screen
+// connection health pushed via POST /api/booth/devices/:uuid/telemetry; the
+// CRM only reads and displays the latest report.
 const uuid = (s) => s
 const tel = (prints, shutters, batteryPct, at) => ({ prints, shutters, batteryPct, updatedAt: at })
 const DEVICES = [
@@ -171,6 +171,25 @@ const DEVICES = [
   { id: 'dev-riya-1', organizationId: 'org-riya', deviceUuid: uuid('d8e9f0a1-b2c3-4d4e-d5e6-f7a8b9c0d1e2'), deviceName: 'Riya Booth', location: 'Dehradun', hardware: ['camera', 'printer'], lastSeenAt: daysAgo(14, 10, 30), registeredAt: daysAgo(100), status: 'active', assignedEventId: null, operatorName: null, operatorPhone: null, telemetry: tel(921, 2540, 74, daysAgo(14, 10, 0)) },
   { id: 'dev-nova-1', organizationId: 'org-nova', deviceUuid: uuid('e0f1a2b3-c4d5-4e6e-e7f8-a9b0c1d2e3f4'), deviceName: 'Nova Test Booth', location: 'Kolkata', hardware: ['camera', 'printer', 'wifi'], lastSeenAt: daysAgo(0, 9, 58), registeredAt: daysAgo(7), status: 'active', assignedEventId: 'evt-nova-1', operatorName: null, operatorPhone: null, telemetry: tel(64, 205, 83, daysAgo(0, 9, 50)) },
 ]
+
+// Last peripheral connection report from the booth heartbeat. All three are
+// shown in the CRM even when a peripheral is disconnected.
+const DEVICE_CONNECTIONS = {
+  'dev-sun-1': { camera: true, printer: true, kioskScreen: true, updatedAt: daysAgo(0, 11, 20) },
+  'dev-sun-2': { camera: true, printer: false, kioskScreen: true, updatedAt: daysAgo(0, 10, 50) },
+  'dev-sun-3': { camera: true, printer: true, kioskScreen: false, updatedAt: daysAgo(0, 9, 0) },
+  'dev-sun-4': { camera: false, printer: false, kioskScreen: false, updatedAt: daysAgo(6, 21, 0) },
+  'dev-kade-1': { camera: true, printer: true, kioskScreen: true, updatedAt: daysAgo(1, 19, 30) },
+  'dev-pika-1': { camera: true, printer: true, kioskScreen: true, updatedAt: daysAgo(0, 11, 0) },
+  'dev-pika-2': { camera: true, printer: false, kioskScreen: true, updatedAt: daysAgo(2, 17, 0) },
+  'dev-pika-3': { camera: true, printer: true, kioskScreen: false, updatedAt: daysAgo(1, 14, 0) },
+  'dev-tech-1': { camera: true, printer: true, kioskScreen: true, updatedAt: daysAgo(0, 10, 40) },
+  'dev-tech-2': { camera: true, printer: false, kioskScreen: true, updatedAt: daysAgo(3, 11, 45) },
+  'dev-vish-1': { camera: true, printer: true, kioskScreen: true, updatedAt: daysAgo(0, 7, 0) },
+  'dev-alpha-1': { camera: false, printer: false, kioskScreen: false, updatedAt: daysAgo(42, 18, 0) },
+  'dev-riya-1': { camera: false, printer: false, kioskScreen: false, updatedAt: daysAgo(14, 10, 0) },
+  'dev-nova-1': { camera: true, printer: true, kioskScreen: false, updatedAt: daysAgo(0, 9, 50) },
+}
 
 // ---------------- Events (v2 shape: no passkey, no print price) ----------------
 // fields: digitalCopy (guests can order a digital copy), filters (allowed
@@ -387,10 +406,15 @@ const PLATFORM_SUPPORT = [
   {
     id: 'sup-3', ticketNo: null, organizationId: 'org-pika',
     subject: 'Need help moving one booth to a replacement tablet', category: 'account', priority: 'medium', status: 'new',
-    createdBy: 'usr-arpita', createdAt: daysAgo(0, 8, 35), updatedAt: daysAgo(0, 8, 35), acceptedAt: null, resolvedAt: null,
-    decision: null, reapplyCount: 0, resolution: null,
+    createdBy: 'usr-arpita', createdAt: daysAgo(0, 8, 35), updatedAt: daysAgo(0, 10, 0), acceptedAt: null, resolvedAt: null,
+    decision: null,
+    decisionHistory: [{ type: 'denied', reason: 'Please provide the old device UUID so we can preserve the correct booth history.', by: 'usr-sm', at: daysAgo(0, 9, 15) }],
+    reapplyCount: 1,
+    lastReapplication: { id: 'sm-5b', authorId: 'usr-arpita', authorName: 'Arpita Shah', authorRole: 'Organization Admin', side: 'org', at: daysAgo(0, 10, 0), text: 'Re-applying with the damaged tablet UUID: e5f6a7b8-c9d0-4e1f-a2b3-c4d5e6f7a8b9. Please preserve its event and payment history.', images: [] },
+    resolution: null,
     messages: [
       { id: 'sm-5', authorId: 'usr-arpita', authorName: 'Arpita Shah', authorRole: 'Organization Admin', side: 'org', at: daysAgo(0, 8, 35), text: 'Our studio tablet was damaged. Please guide us so the paired booth and event history are not lost.', images: [] },
+      { id: 'sm-5b', authorId: 'usr-arpita', authorName: 'Arpita Shah', authorRole: 'Organization Admin', side: 'org', at: daysAgo(0, 10, 0), text: 'Re-applying with the damaged tablet UUID: e5f6a7b8-c9d0-4e1f-a2b3-c4d5e6f7a8b9. Please preserve its event and payment history.', images: [] },
     ],
   },
   {
@@ -531,7 +555,10 @@ function seedDb() {
     organizations: ORGS,
     subscriptions: SUBSCRIPTIONS,
     planCatalog: PLAN_CATALOG,
-    devices: DEVICES,
+    devices: DEVICES.map((device) => ({
+      ...device,
+      connections: { ...(DEVICE_CONNECTIONS[device.id] || { camera: false, printer: false, kioskScreen: false, updatedAt: device.lastSeenAt }) },
+    })),
     // Existing seed events also carry the effective price snapshot they would
     // have received at creation time.
     events: EVENTS.map((event) => ({

@@ -287,7 +287,7 @@ export default function EventsDevices() {
                     <tr>
                       <th>Device</th>
                       <th>UUID</th>
-                      <th>Hardware</th>
+                      <th>Hardware health</th>
                       <th>Status</th>
                       <th>Booth operator</th>
                       <th>Last seen</th>
@@ -440,32 +440,61 @@ export default function EventsDevices() {
   )
 }
 
-// ---------------- Device telemetry (Hardware column) ----------------
-// Numbers the booth app pushes to the backend: prints made by the printer,
-// shutter count of the camera, camera battery %. The CRM only reads this.
+// ---------------- Device telemetry (Hardware health column) ----------------
+// The booth heartbeat reports both lifetime counters and live peripheral
+// connections: camera, printer and the external kiosk display.
+
+const PERIPHERALS = [
+  { key: 'camera', label: 'Camera', short: 'Camera', icon: 'camera' },
+  { key: 'printer', label: 'Printer', short: 'Printer', icon: 'printer' },
+  { key: 'kioskScreen', label: 'External kiosk screen', short: 'Screen', icon: 'monitor' },
+]
 
 function TelemetryCell({ device }) {
   const t = device.telemetry
-  if (!t) return <span className="t12 faint">No telemetry yet</span>
   const num = (n) => Number(n || 0).toLocaleString('en-IN')
   return (
     <div className="tel">
-      {device.hardware?.includes('printer') ? (
-        <span className="tel-row" title="Prints this printer has made (pushed by the booth app)">
-          <Icon name="printer" size={13} />
-          <b>{num(t.prints)}</b>&nbsp;prints
-        </span>
-      ) : null}
-      {device.hardware?.includes('camera') ? (
-        <span className="tel-row" title="Camera shutter count (pushed by the booth app)">
-          <Icon name="aperture" size={13} />
-          <b>{num(t.shutters)}</b>&nbsp;clicks
-        </span>
-      ) : null}
-      {t.batteryPct != null ? <BatteryPill pct={t.batteryPct} /> : null}
-      <span className="tel-stale" title={`Last pushed ${new Date(t.updatedAt).toLocaleString()}`}>
-        via booth · {relativeTime(t.updatedAt)}
-      </span>
+      <div className="hw-health" aria-label="Peripheral connection health">
+        {PERIPHERALS.map((item) => {
+          const connected = device.connections?.[item.key] === true
+          return (
+            <span key={item.key} className="hw-health-item">
+              <span
+                className={`hw-connection ${connected ? 'connected' : 'disconnected'}`}
+                title={`${item.label}: ${connected ? 'connected' : 'not connected'}`}
+                aria-label={`${item.label} ${connected ? 'connected' : 'not connected'}`}
+              >
+                <Icon name={item.icon} size={15} />
+                <span className="hw-connection-mark"><Icon name={connected ? 'check' : 'x'} size={8} strokeWidth={3} /></span>
+              </span>
+              <span>{item.short}</span>
+            </span>
+          )
+        })}
+      </div>
+      {t ? (
+        <>
+          {device.hardware?.includes('printer') ? (
+            <span className="tel-row" title="Prints this printer has made (pushed by the booth app)">
+              <Icon name="printer" size={13} />
+              <b>{num(t.prints)}</b>&nbsp;prints
+            </span>
+          ) : null}
+          {device.hardware?.includes('camera') ? (
+            <span className="tel-row" title="Camera shutter count (pushed by the booth app)">
+              <Icon name="aperture" size={13} />
+              <b>{num(t.shutters)}</b>&nbsp;clicks
+            </span>
+          ) : null}
+          {t.batteryPct != null ? <BatteryPill pct={t.batteryPct} /> : null}
+          <span className="tel-stale" title={`Last pushed ${new Date(device.connections?.updatedAt || t.updatedAt).toLocaleString()}`}>
+            via booth · {relativeTime(device.connections?.updatedAt || t.updatedAt)}
+          </span>
+        </>
+      ) : (
+        <span className="tel-stale">No counters reported yet</span>
+      )}
     </div>
   )
 }
