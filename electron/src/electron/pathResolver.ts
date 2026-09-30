@@ -1,11 +1,8 @@
-import { app } from "electron";
-import path from "node:path";
-import { isDev } from "./util.js";
+import { app } from 'electron'
+import path from 'node:path'
+import { isDev } from './util.js'
 
 export function getPreloadPath(): string {
-    return path.join(
-        app.getAppPath(),
-        isDev() ? '.' : '..',
-        '/dist-electron/preload.cjs',
-    )
+  if (isDev()) return path.join(app.getAppPath(), 'dist-electron', 'preload.cjs')
+  return path.join(process.resourcesPath, 'dist-electron', 'preload.cjs')
 }

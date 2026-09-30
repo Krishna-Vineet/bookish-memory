@@ -139,7 +139,4 @@ src/
     org/          Dashboard, Revenue, EventsDevices, PlatformSupport, guest Support,
                   Team, OrgDefaults, Coupons
     Profile.jsx
-scripts/
-  api-smoke.mjs   API contract test (node scripts/api-smoke.mjs)
-  render-test.mjs role×screen render test (node scripts/render-test.mjs)
 ```

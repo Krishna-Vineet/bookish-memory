@@ -1,6 +1,13 @@
-const electron = require("electron");
+const { contextBridge, ipcRenderer } = require('electron')
 
-electron.contextBridge.executeInMainWorld('electron', {
-    // here all the functions will be exposed to the frontend that will be used by it to communicate with the backend.
-    // it will be bidirectional so the frontend can call the backend and backend can call the frontend.
+contextBridge.exposeInMainWorld('booth', {
+  getInstallation: () => ipcRenderer.invoke('booth:get-installation'),
+  saveInstallation: (value: unknown) => ipcRenderer.invoke('booth:save-installation', value),
+  clearInstallation: () => ipcRenderer.invoke('booth:clear-installation'),
+  getSystemSnapshot: () => ipcRenderer.invoke('booth:system-snapshot'),
+  reportCamera: (value: unknown) => ipcRenderer.invoke('booth:camera-report', value),
+  recordCapture: () => ipcRenderer.invoke('booth:record-capture'),
+  print: (value: unknown) => ipcRenderer.invoke('booth:print', value),
+  setKiosk: (enabled: boolean) => ipcRenderer.invoke('booth:set-kiosk', enabled),
+  appInfo: () => ipcRenderer.invoke('booth:app-info'),
 })

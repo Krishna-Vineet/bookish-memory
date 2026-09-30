@@ -1,5 +1,6 @@
 node_modules
 dist/
+scripts
 # local env overrides (never commit real values)
 .env
 .env.local

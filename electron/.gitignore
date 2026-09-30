@@ -12,6 +12,7 @@ dist
 dist-react
 dist-electron
 dist-ssr
+release
 *.local
 
 # Editor directories and files
