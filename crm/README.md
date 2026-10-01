@@ -11,9 +11,15 @@ charts and layout are hand-rolled SVG/CSS so the app works in fully offline prev
 npm install
 npm run dev        # http://localhost:5173
 npm run build      # production bundle in dist/
-node scripts/api-smoke.mjs    # API contract test (159 assertions)
-node scripts/render-test.mjs  # role × screen render test (38 cases)
+node scripts/api-smoke.mjs    # API contract test
+node scripts/render-test.mjs  # role × screen render test
 ```
+
+## Documentation
+
+- [CRM product and technical documentation](docs/CRM_DOCUMENTATION.md)
+- [Complete feature list](docs/FEATURE_LIST.md)
+- [Client, user, and owner guide](docs/USER_GUIDE.md)
 
 ### Configuration
 
@@ -67,10 +73,12 @@ v1 shape and this CRM will not work against it.
 | Subscription Plans | manage | — | — | — | — |
 | Template Library | manage | manage | — | — | — |
 | Team & Roles | create + activate/deactivate | read | — | — | — |
+| Gallery Settings | manage | manage | — | — | — |
 | Audit & Logs (platform) | ✔ | ✔ | — | — | — |
 | Org Dashboard | — | — | — | ✔ | ✔ |
 | Org Revenue | — | — | — | ✔ | — |
 | Events & Devices | — | — | — | ✔ | ✔ |
+| Gallery | — | — | — | ✔ | ✔ |
 | HappyPix Support (org → platform) | — | — | — | ✔ | ✔ |
 | Guest Support (booth tickets) | — | — | — | ✔ | ✔ |
 | Organization Defaults | — | — | — | manage | read-only |
@@ -112,9 +120,13 @@ UUID-paired devices, never users.
   and platform role. An organization raises a review request; platform staff deny it with a
   visible reason or accept it into a numbered ticket. Both sides then chat and attach images.
   Only platform staff resolve or reopen; denied requests may be re-applied with new text.
-- **Team**: org admins create organization admins/managers. Owners create platform admins/
-  support managers, but cannot edit an existing teammate's name or email — they can only
-  deactivate or re-activate the account. Password reset is self-service.
+- **Team**: org admins create organization admins/managers. Existing organization-team names,
+  emails and roles cannot be edited by another admin; only deactivation or re-activation is
+  available. Owners follow the same identity rule for platform teammates. Password reset is
+  self-service.
+- **Gallery**: organization admins/managers browse final print-ready images by event and booth.
+  Owner/platform-admin policy controls platform-wide availability and whether explicit guest
+  publishing consent is required before an image is returned.
 - **Audit** is written on every mutating action and read is permission-gated.
 
 ## Project map

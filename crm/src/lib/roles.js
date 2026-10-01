@@ -64,6 +64,8 @@ export const PERMS = {
   GLOBAL_TEMPLATES_MANAGE: 'platform.templates.manage',
   GLOBAL_TEMPLATES_USE: 'organization.events.templates.use',
   PROFILE_EDIT: 'profile.edit',
+  PLATFORM_GALLERY_SETTINGS: 'platform.gallery.settings',
+  ORG_GALLERY_VIEW: 'organization.gallery.view',
 }
 
 // The fixed matrix. Nobody can change it.
@@ -90,6 +92,8 @@ const MATRIX = {
   [PERMS.EVENT_CREATE]: [ROLES.ORG_ADMIN, ROLES.ORG_MANAGER],
   [PERMS.GLOBAL_TEMPLATES_MANAGE]: [ROLES.OWNER, ROLES.PLATFORM_ADMIN],
   [PERMS.GLOBAL_TEMPLATES_USE]: [ROLES.ORG_ADMIN, ROLES.ORG_MANAGER],
+  [PERMS.PLATFORM_GALLERY_SETTINGS]: [ROLES.OWNER, ROLES.PLATFORM_ADMIN],
+  [PERMS.ORG_GALLERY_VIEW]: [ROLES.ORG_ADMIN, ROLES.ORG_MANAGER],
   [PERMS.PROFILE_EDIT]: [
     ROLES.OWNER, ROLES.PLATFORM_ADMIN, ROLES.SUPPORT_MANAGER, ROLES.ORG_ADMIN, ROLES.ORG_MANAGER,
   ],
@@ -124,6 +128,7 @@ export const SCREENS = [
       { id: 'platform-plans', label: 'Subscription Plans', perm: PERMS.SUBSCRIPTION_PLANS_MANAGE, path: '/platform/plans', icon: 'tag' },
       { id: 'platform-templates', label: 'Template Library', perm: PERMS.GLOBAL_TEMPLATES_MANAGE, path: '/platform/templates', icon: 'template' },
       { id: 'platform-team', label: 'Team & Roles', perm: PERMS.PLATFORM_USERS_MANAGE, path: '/platform/team', icon: 'users', viewOnlyFor: [ROLES.PLATFORM_ADMIN] },
+      { id: 'platform-gallery-settings', label: 'Gallery Settings', perm: PERMS.PLATFORM_GALLERY_SETTINGS, path: '/platform/gallery-settings', icon: 'image' },
       { id: 'platform-audit', label: 'Audit & Logs', perm: PERMS.PLATFORM_AUDIT_VIEW, path: '/platform/audit', icon: 'log' },
     ],
   },
@@ -133,6 +138,7 @@ export const SCREENS = [
       { id: 'org-dashboard', label: 'Dashboard', perm: PERMS.ORG_DASHBOARD_VIEW, path: '/org/dashboard', icon: 'dashboard' },
       { id: 'org-revenue', label: 'Revenue', perm: PERMS.ORG_REVENUE_VIEW, path: '/org/revenue', icon: 'revenue' },
       { id: 'org-events', label: 'Events & Devices', perm: PERMS.EVENTS_DEVICES_MANAGE, path: '/org/events', icon: 'calendar' },
+      { id: 'org-gallery', label: 'Gallery', perm: PERMS.ORG_GALLERY_VIEW, path: '/org/gallery', icon: 'image' },
       { id: 'org-team', label: 'Team & Roles', perm: PERMS.ORG_TEAM_VIEW, path: '/org/team', icon: 'users' },
       { id: 'org-platform-support', label: 'HappyPix Support', perm: PERMS.ORG_PLATFORM_SUPPORT, path: '/org/platform-support', icon: 'mail' },
       { id: 'org-support', label: 'Guest Support', perm: PERMS.TICKETS_RESOLVE, path: '/org/support', icon: 'headset' },

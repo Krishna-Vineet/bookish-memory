@@ -675,6 +675,27 @@ export function handle(method, path, body, token) {
 
   // ================= PLATFORM =================
   if (p === 'platform') {
+    if (p2 === 'gallery-settings') {
+      const actor = authed(PERMS.PLATFORM_GALLERY_SETTINGS)
+      if (method === 'GET') return { status: 200, data: { ...(db.platformSettings || { galleryEnabled: false, requireGuestConsent: true }) } }
+      if (method === 'PUT') {
+        const settings = db.platformSettings || { galleryEnabled: false, requireGuestConsent: true }
+        if (body && body.galleryEnabled !== undefined) {
+          if (typeof body.galleryEnabled !== 'boolean') throw new ApiError(400, 'galleryEnabled must be a boolean.')
+          settings.galleryEnabled = body.galleryEnabled
+        }
+        if (body && body.requireGuestConsent !== undefined) {
+          if (typeof body.requireGuestConsent !== 'boolean') throw new ApiError(400, 'requireGuestConsent must be a boolean.')
+          settings.requireGuestConsent = body.requireGuestConsent
+        }
+        settings.updatedAt = NOW().toISOString()
+        settings.updatedBy = actor.id
+        db.platformSettings = settings
+        logAudit(db, { actorId: actor.id, action: 'platform.gallery.settings_updated', entity: 'platform_settings', summary: `Gallery ${settings.galleryEnabled ? 'enabled' : 'disabled'}; guest consent ${settings.requireGuestConsent ? 'required' : 'not required'}` })
+        persist()
+        return { status: 200, data: { settings } }
+      }
+    }
     if (p2 === 'dashboard' && method === 'GET') {
       authed(PERMS.PLATFORM_DASHBOARD_VIEW)
       const orgs = db.organizations
@@ -1724,6 +1745,25 @@ export function handle(method, path, body, token) {
       return { status: 200, data: { ok: true } }
     }
 
+    if (p2 === 'gallery' && method === 'GET') {
+      authed(PERMS.ORG_GALLERY_VIEW)
+      const settings = db.platformSettings || { galleryEnabled: false, requireGuestConsent: true }
+      const events = db.events.filter((e) => e.organizationId === orgId).map((e) => ({ id: e.id, name: e.name }))
+      const booths = db.devices.filter((d) => d.organizationId === orgId).map((d) => ({ id: d.id, name: d.deviceName }))
+      if (!settings.galleryEnabled) return { status: 200, data: { enabled: false, requireGuestConsent: settings.requireGuestConsent, photos: [], events, booths } }
+      const eventId = url.searchParams.get('eventId')
+      const boothId = url.searchParams.get('boothId')
+      let photos = (db.galleryPhotos || []).filter((photo) => photo.organizationId === orgId)
+      if (settings.requireGuestConsent) photos = photos.filter((photo) => photo.guestConsent === true)
+      if (eventId) photos = photos.filter((photo) => photo.eventId === eventId)
+      if (boothId) photos = photos.filter((photo) => photo.boothId === boothId)
+      photos = photos.map((photo) => ({ ...photo,
+        eventName: events.find((e) => e.id === photo.eventId)?.name || 'Deleted event',
+        boothName: booths.find((b) => b.id === photo.boothId)?.name || 'Removed booth',
+      })).sort((a, b) => new Date(b.generatedAt) - new Date(a.generatedAt))
+      return { status: 200, data: { enabled: true, requireGuestConsent: settings.requireGuestConsent, photos, events, booths } }
+    }
+
     if (p2 === 'team' && !p3) {
       if (method === 'GET') {
         authed()
@@ -1754,30 +1794,14 @@ export function handle(method, path, body, token) {
       authed(PERMS.ORG_TEAM_MANAGE)
       const m = db.users.find((x) => x.id === p3 && x.organizationId === orgId)
       if (!m) throw new ApiError(404, 'Team member not found.')
-      if (body.name) m.name = safeStr(body.name, 80) || m.name
-      if (body.email) {
-        const email = safeStr(body.email, 120).toLowerCase()
-        const fmt = emailError(email)
-        if (fmt) throw new ApiError(400, fmt)
-        if (db.users.some((x) => x.id !== m.id && x.email.toLowerCase() === email)) throw new ApiError(409, 'A user with this email already exists.')
-        if (email !== m.email) { m.email = email; killSessions(db, m.id) }
-      }
-      if (body.role) {
-        if (![ROLES.ORG_ADMIN, ROLES.ORG_MANAGER].includes(body.role)) throw new ApiError(400, 'Role must be Organization Admin or Organization Manager.')
-        if (m.role === ROLES.ORG_ADMIN && body.role !== ROLES.ORG_ADMIN && activeAdmins().length <= 1) {
-          throw new ApiError(409, 'This is the last active admin — promote another admin first.')
-        }
-        m.role = body.role
-      }
-      if (body.status) {
-        if (m.role === ROLES.ORG_ADMIN && body.status !== 'active' && activeAdmins().length <= 1) {
-          throw new ApiError(409, 'This is the last active admin — promote another admin first.')
-        }
-        if (m.id === u.id && body.status !== 'active') throw new ApiError(400, 'You cannot deactivate your own account.')
-        m.status = body.status
-        if (m.status !== 'active') killSessions(db, m.id)
-      }
-      logAudit(db, { actorId: u.id, action: 'organization.team.updated', entity: 'user', summary: `Team member ${m.name} updated`, organizationId: orgId })
+      const keys = Object.keys(body || {})
+      if (keys.some((key) => key !== 'status')) throw new ApiError(403, 'Organization Admins cannot edit a team member’s name, email or role. Only activation status can be changed here.')
+      if (!['active', 'inactive'].includes(body && body.status)) throw new ApiError(400, 'Status must be active or inactive.')
+      if (m.role === ROLES.ORG_ADMIN && body.status !== 'active' && activeAdmins().length <= 1) throw new ApiError(409, 'This is the last active admin and cannot be deactivated.')
+      if (m.id === u.id && body.status !== 'active') throw new ApiError(400, 'You cannot deactivate your own account.')
+      m.status = body.status
+      if (m.status !== 'active') killSessions(db, m.id)
+      logAudit(db, { actorId: u.id, action: m.status === 'active' ? 'organization.team.reactivated' : 'organization.team.deactivated', entity: 'user', summary: `Team member ${m.name} ${m.status === 'active' ? 're-activated' : 'deactivated'}`, organizationId: orgId })
       persist()
       return { status: 200, data: { user: userPublic(m) } }
     }

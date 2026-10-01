@@ -940,3 +940,87 @@ must not infer a screen is disconnected only because the app is running on a sin
   and telemetry batches.
 - Redact credentials, tokens, precise location, and guest media URLs from logs.
 - Add contract tests for every transition, tenancy check, replay attempt, and failure response.
+
+---
+
+## 8. Gallery and guest publishing consent (new)
+
+The CRM gallery requires the **final composed print image** (the exact flattened asset sent
+to the printer, after layout, edits, filter, template, and branding) to be persisted by the
+backend. Raw camera captures must not be exposed by this feature.
+
+### `PlatformSettings.gallery` (singleton platform configuration)
+
+```json
+{
+  "galleryEnabled": true,
+  "requireGuestConsent": true,
+  "updatedAt": "ISO",
+  "updatedBy": "userId"
+}
+```
+
+- `galleryEnabled = false`: organization gallery queries return no images and the CRM shows
+  the gallery as unavailable.
+- `galleryEnabled = true`, `requireGuestConsent = false`: every final generated image is
+  visible to its organization. The booth need not show the publishing-permission question.
+- Both values `true`: the booth must show **“Allow my photo to post on social media?”** while
+  the guest generates/edits the photo. Only an explicit `true` is gallery-eligible. Missing,
+  null, skipped, or false consent must all be treated as denied.
+- Only `OWNER` and `PLATFORM_ADMIN` may read/update this singleton. Updates are audit logged.
+
+### `GalleryPhoto` (new collection)
+
+```json
+{
+  "id": "ObjectId",
+  "organizationId": "ObjectId",
+  "eventId": "ObjectId",
+  "boothId": "ObjectId",
+  "sessionId": "string",
+  "finalImageUrl": "https://private-cdn/.../final-print.webp",
+  "guestConsent": true,
+  "consentCapturedAt": "ISO | null",
+  "generatedAt": "ISO",
+  "createdAt": "ISO"
+}
+```
+
+Required indexes: `(organizationId, generatedAt DESC)`,
+`(organizationId, eventId, generatedAt DESC)`, and
+`(organizationId, boothId, generatedAt DESC)`. Store media in private object storage and
+return short-lived signed read URLs. Validate that `eventId` and `boothId` belong to the same
+`organizationId`; never trust organization scope supplied by a CRM caller.
+
+The booth finalization transaction must upload/store the completed print and create this row.
+When consent is required, capture the boolean before finalization and bind it to the same booth
+session. Consent is immutable on the gallery record. Do not infer consent from payment,
+digital-copy selection, printing, or acceptance of general terms.
+
+### Endpoints
+
+- `GET /api/platform/gallery-settings`
+  → `{ galleryEnabled, requireGuestConsent, updatedAt, updatedBy }`
+- `PUT /api/platform/gallery-settings`
+  body `{ galleryEnabled?: boolean, requireGuestConsent?: boolean }`
+  → `{ settings }` (`OWNER` / `PLATFORM_ADMIN`; audit logged)
+- `GET /api/org/gallery?eventId=&boothId=`
+  → `{ enabled, requireGuestConsent, photos, events, booths }`
+  (`ORG_ADMIN` / `ORG_MANAGER`; organization scope is derived only from the JWT)
+- Booth finalization should add an authenticated device endpoint such as
+  `POST /api/booth/sessions/:sessionId/final-image`, accepting the final image upload/reference,
+  `eventId`, and the explicit `guestConsent` boolean. Device authentication and its paired
+  organization determine tenancy server-side.
+
+For organization gallery reads, enforce platform policy **in the database query**, not only in
+CRM rendering: always filter by the caller's organization, and add `guestConsent: true` when
+`requireGuestConsent` is enabled. Event and booth filters are optional and must also be
+validated against that organization.
+
+### Organization team restriction (changed)
+
+For an existing organization team member, an `ORG_ADMIN` may only deactivate or re-activate
+the account. Reject attempts to update `name`, `email`, or `role` with 403. Keep member creation
+unchanged (the role is selected at creation), retain self-deactivation and last-active-admin
+protections, revoke sessions on deactivation, and audit both status transitions. A member may
+manage their own supported profile fields through the self-service profile flow.

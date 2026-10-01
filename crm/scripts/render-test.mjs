@@ -54,9 +54,11 @@ const MARKERS = {
   '/platform/plans': ['Subscription Plans', 'Business', 'Add plan'],
   '/platform/templates': ['Template Library', 'Royal Wedding', 'Classic White', 'New template'],
   '/platform/team': ['Team & Roles', 'Internal team', 'Fixed role model'],
+  '/platform/gallery-settings': ['Gallery Settings', 'Platform gallery policy'],
   '/platform/audit': ['Audit & Logs'],
   '/org/dashboard': ['Sunset Weddings', 'Booths online', 'Plan usage'],
   '/org/revenue': ['Organization Revenue', 'Revenue by event'],
+  '/org/gallery': ['Gallery', 'Kapoor–Verma'],
   '/org/events': ['Events & Devices', 'Create event', 'Customisation'],
   '/org/platform-support': ['HappyPix Support', 'Booth sync intermittently', 'Raise an issue'],
   '/org/support': ['Support', 'Printer jammed'],
@@ -67,11 +69,11 @@ const MARKERS = {
 }
 
 const CASES = [
-  { email: 'owner@happypix.com', routes: ['/platform/dashboard', '/platform/revenue', '/platform/organizations', '/platform/support', '/platform/plans', '/platform/templates', '/platform/team', '/platform/audit', '/profile'] },
-  { email: 'priya@happypix.com', routes: ['/platform/dashboard', '/platform/organizations', '/platform/support', '/platform/templates', '/platform/team', '/profile'], forbidden: { path: '/platform/plans', to: '/platform/dashboard' } },
+  { email: 'owner@happypix.com', routes: ['/platform/dashboard', '/platform/revenue', '/platform/organizations', '/platform/support', '/platform/plans', '/platform/templates', '/platform/team', '/platform/gallery-settings', '/platform/audit', '/profile'] },
+  { email: 'priya@happypix.com', routes: ['/platform/dashboard', '/platform/organizations', '/platform/support', '/platform/templates', '/platform/team', '/platform/gallery-settings', '/profile'], forbidden: { path: '/platform/plans', to: '/platform/dashboard' } },
   { email: 'support@happypix.com', routes: ['/platform/dashboard', '/platform/organizations', '/platform/support', '/profile'], forbidden: { path: '/platform/templates', to: '/platform/dashboard' } },
-  { email: 'sana@sunsetweddings.com', routes: ['/org/dashboard', '/org/revenue', '/org/events', '/org/team', '/org/platform-support', '/org/support', '/org/defaults', '/org/coupons', '/profile'] },
-  { email: 'rohit@sunsetweddings.com', routes: ['/org/dashboard', '/org/events', '/org/team', '/org/platform-support', '/org/support', '/org/defaults', '/profile'], forbidden: { path: '/org/revenue', to: '/org/dashboard' } },
+  { email: 'sana@sunsetweddings.com', routes: ['/org/dashboard', '/org/revenue', '/org/events', '/org/gallery', '/org/team', '/org/platform-support', '/org/support', '/org/defaults', '/org/coupons', '/profile'] },
+  { email: 'rohit@sunsetweddings.com', routes: ['/org/dashboard', '/org/events', '/org/gallery', '/org/team', '/org/platform-support', '/org/support', '/org/defaults', '/profile'], forbidden: { path: '/org/revenue', to: '/org/dashboard' } },
 ]
 
 let pass = 0

@@ -13,6 +13,7 @@ import SubscriptionPlans from './pages/platform/SubscriptionPlans.jsx'
 import Templates from './pages/platform/Templates.jsx'
 import TeamAndRoles from './pages/platform/TeamAndRoles.jsx'
 import AuditLogs from './pages/platform/AuditLogs.jsx'
+import GallerySettings from './pages/platform/GallerySettings.jsx'
 import OrgDashboard from './pages/org/OrgDashboard.jsx'
 import OrgRevenue from './pages/org/OrgRevenue.jsx'
 import EventsDevices from './pages/org/EventsDevices.jsx'
@@ -21,6 +22,7 @@ import Support from './pages/org/Support.jsx'
 import OrgDefaults from './pages/org/OrgDefaults.jsx'
 import OrgTeam from './pages/org/Team.jsx'
 import Coupons from './pages/org/Coupons.jsx'
+import Gallery from './pages/org/Gallery.jsx'
 import Profile from './pages/Profile.jsx'
 
 // Route table — guard = required permission (server also enforces these).
@@ -32,10 +34,12 @@ const ROUTES = {
   '/platform/plans': { comp: SubscriptionPlans, perm: PERMS.SUBSCRIPTION_PLANS_MANAGE, scope: 'platform' },
   '/platform/templates': { comp: Templates, perm: PERMS.GLOBAL_TEMPLATES_MANAGE, scope: 'platform' },
   '/platform/team': { comp: TeamAndRoles, roles: [ROLES.OWNER, ROLES.PLATFORM_ADMIN], scope: 'platform' },
+  '/platform/gallery-settings': { comp: GallerySettings, perm: PERMS.PLATFORM_GALLERY_SETTINGS, scope: 'platform' },
   '/platform/audit': { comp: AuditLogs, perm: PERMS.PLATFORM_AUDIT_VIEW, scope: 'platform' },
   '/org/dashboard': { comp: OrgDashboard, perm: PERMS.ORG_DASHBOARD_VIEW, scope: 'org' },
   '/org/revenue': { comp: OrgRevenue, perm: PERMS.ORG_REVENUE_VIEW, scope: 'org' },
   '/org/events': { comp: EventsDevices, perm: PERMS.EVENTS_DEVICES_MANAGE, scope: 'org' },
+  '/org/gallery': { comp: Gallery, perm: PERMS.ORG_GALLERY_VIEW, scope: 'org' },
   '/org/team': { comp: OrgTeam, perm: PERMS.ORG_TEAM_VIEW, scope: 'org' },
   '/org/platform-support': { comp: OrgPlatformSupport, perm: PERMS.ORG_PLATFORM_SUPPORT, scope: 'org' },
   '/org/support': { comp: Support, perm: PERMS.TICKETS_RESOLVE, scope: 'org' },

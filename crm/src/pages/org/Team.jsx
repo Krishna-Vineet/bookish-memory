@@ -2,8 +2,8 @@
 //
 // Org Admins add and manage their own Organization Admins and Managers —
 // same fixed role model as the platform, scoped to this organization:
-//   • Admin can add members (Admin or Manager), edit details, change roles
-//     and deactivate — with last-active-admin protection.
+//   • Admin can add members and deactivate/re-activate existing members.
+//     Existing names, emails and roles are immutable here.
 //   • Managers get a read-only view (no actions, server-enforced too).
 // Passwords are never issued here: every member uses self-service
 // Forgot Password (OTP to their email) — server has no reset-password API.
@@ -20,7 +20,7 @@ export default function OrgTeam() {
   const { user, toast } = useApp()
   const canManage = user.role === ROLES.ORG_ADMIN
   const [members, setMembers] = useState(null)
-  const [editing, setEditing] = useState(null) // 'new' | member
+  const [editing, setEditing] = useState(null) // 'new' only — existing identity is self-managed
   const [draft, setDraft] = useState(null)
   const [deactFor, setDeactFor] = useState(null)
   const [busy, setBusy] = useState(false)
@@ -45,21 +45,13 @@ export default function OrgTeam() {
   const save = async () => {
     if (!draft) return
     setError('')
-    if (!draft.name.trim() || !draft.email.trim() || (editing === 'new' && !draft.password)) {
+    if (!draft.name.trim() || !draft.email.trim() || !draft.password) {
       return setError('Name, email and password are required.')
     }
     setBusy(true)
     try {
-      if (editing === 'new') {
-        await api.org.createMember({ name: draft.name.trim(), email: draft.email.trim(), password: draft.password, role: draft.role })
-        toast(`${draft.role === ROLES.ORG_ADMIN ? 'Organization Admin' : 'Organization Manager'} added — share the password securely, they change it after first sign-in`)
-      } else {
-        const body = { name: draft.name.trim(), email: draft.email.trim() }
-        if (draft.role && draft.role !== editing.role) body.role = draft.role
-        if (draft.status && draft.status !== editing.status) body.status = draft.status
-        await api.org.updateMember(editing.id, body)
-        toast('Team member updated')
-      }
+      await api.org.createMember({ name: draft.name.trim(), email: draft.email.trim(), password: draft.password, role: draft.role })
+      toast(`${draft.role === ROLES.ORG_ADMIN ? 'Organization Admin' : 'Organization Manager'} added — share the password securely, they change it after first sign-in`)
       setEditing(null)
       load()
     } catch (e) {
@@ -93,7 +85,7 @@ export default function OrgTeam() {
           <div className="page-title">Team &amp; Roles</div>
           <div className="page-sub">
             {canManage
-              ? 'Your organization team. Add Organization Admins and Managers — roles and permissions are fixed by the platform.'
+              ? 'Add team members, or deactivate and re-activate existing accounts. Names, emails and roles cannot be edited by an Organization Admin.'
               : 'Your organization team. Read-only for your role — ask an Organization Admin to make changes.'}
           </div>
         </div>
@@ -132,7 +124,6 @@ export default function OrgTeam() {
                     <Chip tone={m.role === ROLES.ORG_ADMIN ? 'active' : 'neutral'}>{ROLE_LABELS[m.role]}</Chip>
                     {canManage && m.id !== user.id && (
                       <div className="row gap-8">
-                        <Button size="sm" variant="ghost" icon="edit" onClick={() => { setError(''); setDraft({ name: m.name, email: m.email, role: m.role, status: m.status }); setEditing(m) }}>Edit</Button>
                         <Button
                           size="sm"
                           variant="ghost"
@@ -183,13 +174,13 @@ export default function OrgTeam() {
       <Modal
         open={!!editing}
         onClose={() => setEditing(null)}
-        title={editing === 'new' ? 'Add team member' : `Edit ${editing?.name}`}
-        sub={editing === 'new' ? 'Organization Admin or Organization Manager — both use the same fixed permission model.' : 'Change name, email or role. The member keeps their password.'}
+        title="Add team member"
+        sub="Choose the fixed role when creating the account. Existing identity and role cannot be changed by another admin."
         footer={
           <>
             {error ? <span className="input-error" style={{ marginRight: 'auto' }}>{error}</span> : null}
             <Button variant="ghost" onClick={() => setEditing(null)}>Cancel</Button>
-            <Button variant="primary" onClick={save} disabled={busy}>{busy ? 'Saving…' : editing === 'new' ? 'Add member' : 'Save changes'}</Button>
+            <Button variant="primary" onClick={save} disabled={busy}>{busy ? 'Saving…' : 'Add member'}</Button>
           </>
         }
       >
@@ -198,10 +189,10 @@ export default function OrgTeam() {
             <Field label="Full name" required>
               <TextInput value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} placeholder="e.g. Meera Iyer" />
             </Field>
-            <Field label="Email" required hint="This is their login ID. Changing it signs their other sessions out.">
+            <Field label="Email" required hint="This becomes their login ID and can only be changed by the member through the self-service flow.">
               <TextInput type="email" value={draft.email} onChange={(e) => setDraft({ ...draft, email: e.target.value })} placeholder="name@company.com" />
             </Field>
-            {editing === 'new' ? (
+            {editing ? (
               <Field label="Initial password" required hint="Minimum 8 characters with at least one letter and one number. They can change it in their Profile, or self-reset via Forgot password.">
                 <TextInput type="password" value={draft.password} onChange={(e) => setDraft({ ...draft, password: e.target.value })} placeholder="••••••••" />
               </Field>

@@ -44,6 +44,8 @@ export const api = {
     updateTemplate: (id, body) => request('PUT', `platform/templates/${id}`, body),
     deleteTemplate: (id) => request('DELETE', `platform/templates/${id}`),
     generateTemplateAI: (body) => request('POST', 'platform/templates/ai-generate', body),
+    gallerySettings: () => request('GET', 'platform/gallery-settings'),
+    saveGallerySettings: (body) => request('PUT', 'platform/gallery-settings', body),
   },
   org: {
     dashboard: () => request('GET', 'org/dashboard'),
@@ -81,9 +83,10 @@ export const api = {
     deleteCoupon: (id) => request('DELETE', `org/coupons/${id}`),
     team: () => request('GET', 'org/team'),
     createMember: (body) => request('POST', 'org/team', body), // { name, email, password, role: ORG_ADMIN | ORG_MANAGER }
-    updateMember: (id, body) => request('PUT', `org/team/${id}`, body), // { name?, email?, role?, status? }
+    updateMember: (id, body) => request('PUT', `org/team/${id}`, body), // { status } only; identity is self-managed
     deactivateMember: (id) => request('POST', `org/team/${id}/deactivate`, {}),
     activateMember: (id) => request('POST', `org/team/${id}/activate`, {}),
+    gallery: (q = '') => request('GET', `org/gallery${q}`),
     audit: (q = '') => request('GET', `org/audit${q}`),
   },
 }

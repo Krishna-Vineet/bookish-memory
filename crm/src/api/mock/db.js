@@ -8,7 +8,7 @@ import { suggestedPriceMap } from '../../lib/layouts.js'
 import { DESIGNER_TEMPLATES, AI_SEED_TEMPLATES, PLAYGROUND_SEED_TEMPLATES } from '../../lib/templateMeta.js'
 
 const DB_KEY = 'happypix_crm_v2_db'
-const DB_VERSION = 9
+const DB_VERSION = 10
 
 function mulberry32(a) {
   return function () {
@@ -43,6 +43,21 @@ const logoSvg = (initials, color) => {
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="120" height="120"><circle cx="60" cy="60" r="54" fill="${color}"/><text x="60" y="74" font-family="Georgia" font-size="44" font-style="italic" fill="#fff" text-anchor="middle">${initials}</text></svg>`
   return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg)
 }
+
+const finalPrintSvg = (title, c1, c2, n = 1) => {
+  const panels = n % 2 ? '<rect x="54" y="70" width="372" height="430" rx="10" fill="#fff" opacity=".94"/>' : '<rect x="54" y="70" width="174" height="430" rx="10" fill="#fff" opacity=".94"/><rect x="252" y="70" width="174" height="430" rx="10" fill="#fff" opacity=".94"/>'
+  const people = n % 2 ? '<circle cx="200" cy="230" r="58" fill="#f2b6a0"/><circle cx="292" cy="220" r="54" fill="#d9987f"/><path d="M110 450c14-112 75-150 111-150s97 38 111 150" fill="#5f4caa"/><path d="M205 450c12-108 66-146 104-146 36 0 78 40 92 146" fill="#ea097f"/>' : '<circle cx="141" cy="225" r="47" fill="#e7ab91"/><path d="M78 445c8-108 54-155 74-155 30 0 68 47 75 155" fill="#3871c1"/><circle cx="339" cy="225" r="47" fill="#efbca5"/><path d="M273 445c10-105 54-155 75-155 29 0 67 48 75 155" fill="#ea097f"/>'
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="480" height="600"><defs><linearGradient id="g" x2="1" y2="1"><stop stop-color="${c1}"/><stop offset="1" stop-color="${c2}"/></linearGradient></defs><rect width="480" height="600" fill="url(#g)"/>${panels}${people}<rect y="515" width="480" height="85" fill="rgba(25,20,36,.88)"/><text x="240" y="552" fill="white" text-anchor="middle" font-family="Georgia" font-size="20">${title}</text><text x="240" y="577" fill="#f4b7d8" text-anchor="middle" font-family="Arial" font-size="11" letter-spacing="3">HAPPYPIX FINAL PRINT</text></svg>`
+  return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg)
+}
+
+const GALLERY_PHOTOS = [
+  { id: 'gal-sun-1', organizationId: 'org-sunset', eventId: 'evt-sun-1', boothId: 'dev-sun-1', finalImageUrl: finalPrintSvg('Kapoor–Verma', '#6d204a', '#c18b45', 1), guestConsent: true, generatedAt: D('2026-09-24T20:12:00+05:30') },
+  { id: 'gal-sun-2', organizationId: 'org-sunset', eventId: 'evt-sun-1', boothId: 'dev-sun-1', finalImageUrl: finalPrintSvg('Kapoor–Verma', '#271c59', '#8b4a78', 2), guestConsent: false, generatedAt: D('2026-09-24T20:18:00+05:30') },
+  { id: 'gal-sun-3', organizationId: 'org-sunset', eventId: 'evt-sun-1', boothId: 'dev-sun-2', finalImageUrl: finalPrintSvg('Kapoor–Verma', '#8a3e29', '#e5ad5d', 3), guestConsent: true, generatedAt: D('2026-09-24T20:31:00+05:30') },
+  { id: 'gal-sun-4', organizationId: 'org-sunset', eventId: 'evt-sun-3', boothId: 'dev-sun-2', finalImageUrl: finalPrintSvg('Mehendi Sangeet', '#386641', '#a7c957', 4), guestConsent: true, generatedAt: D('2026-08-21T19:44:00+05:30') },
+  { id: 'gal-pika-1', organizationId: 'org-pika', eventId: 'evt-pika-1', boothId: 'dev-pika-1', finalImageUrl: finalPrintSvg('Pika Grand Launch', '#17375e', '#4da6a8', 1), guestConsent: true, generatedAt: D('2026-09-24T14:08:00+05:30') },
+]
 
 // ---------------- Templates (global, platform-owned — Template Library) ----------------
 // Designer templates are hand-crafted React/SVG components registered in
@@ -573,6 +588,8 @@ function seedDb() {
     payments: buildPayments(),
     audit: AUDIT,
     withdrawals: WITHDRAWALS, // wallet → org UPI payouts
+    platformSettings: { galleryEnabled: true, requireGuestConsent: true, updatedAt: daysAgo(1), updatedBy: 'usr-owner' },
+    galleryPhotos: GALLERY_PHOTOS,
     sessions: [], // auth sessions (token, userId, expiry) — runtime state
     loginAttempts: {}, // login throttling counters — runtime state
   }
